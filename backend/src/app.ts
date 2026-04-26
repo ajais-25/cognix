@@ -17,7 +17,9 @@ app.use(express.static("public"));
 app.use(cookieParser());
 
 import conversationRoutes from "./routes/conversation.routes.ts";
+import userRoutes from "./routes/user.routes.ts";
 
 app.use("/api/v1/conversations", conversationRoutes);
+app.use("/api/v1/users", userRoutes);
 
 export default app;
