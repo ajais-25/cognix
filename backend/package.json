@@ -1,0 +1,31 @@
+{
+    "name": "backend",
+    "version": "1.0.0",
+    "description": "An AI-powered search assistant that delivers accurate, real-time answers with sources",
+    "license": "ISC",
+    "author": "Akshat Jaiswal",
+    "type": "module",
+    "main": "index.ts",
+    "scripts": {
+        "dev": "tsx watch src/index.ts",
+        "start": "tsx src/index.ts",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@tavily/core": "^0.7.2",
+        "@types/cookie-parser": "^1.4.10",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.6",
+        "cookie-parser": "^1.4.7",
+        "cors": "^2.8.6",
+        "dotenv": "^17.4.2",
+        "express": "^5.2.1",
+        "mongoose": "^9.5.0"
+    },
+    "devDependencies": {
+        "@types/node": "^25.6.0",
+        "prettier": "^3.8.3",
+        "tsx": "^4.21.0",
+        "typescript": "^6.0.3"
+    }
+}
