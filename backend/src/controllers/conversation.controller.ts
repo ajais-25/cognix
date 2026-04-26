@@ -4,7 +4,7 @@ import { Types } from "mongoose";
 import { PROMPT_TEMPLATE, SYSTEM_PROMPT } from "../prompt";
 import Conversation from "../models/conversation.model";
 import Message from "../models/messsage.model";
-import { client as tavily } from "../utils/tavily";
+import { getTavilyClient } from "../utils/tavily";
 
 const getConversationTitle = (query: string) => {
     const trimmed = query.trim();
@@ -45,8 +45,9 @@ const ask = async (req: Request, res: Response) => {
         }
 
         const normalizedQuery = query.trim();
+        const tavilyClient = getTavilyClient();
 
-        const webSearchResponse = await tavily.search(normalizedQuery, {
+        const webSearchResponse = await tavilyClient.search(normalizedQuery, {
             searchDepth: "advanced",
         });
 
@@ -110,6 +111,18 @@ const ask = async (req: Request, res: Response) => {
         res.end();
     } catch (error) {
         console.error("Error in ask controller:", error);
+
+        if (
+            !res.headersSent &&
+            error instanceof Error &&
+            error.message.includes("Missing TAVILY_API_KEY")
+        ) {
+            return res.status(500).json({
+                success: false,
+                message:
+                    "Server configuration error: TAVILY_API_KEY is not set.",
+            });
+        }
 
         if (!res.headersSent) {
             return res
