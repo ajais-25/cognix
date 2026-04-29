@@ -1,0 +1,33 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables
+.env
+.env.local
+.env.*
+
+# Temporary files and caches
+*.sqlite3
+.pytest_cache/
+.coverage
+.tox/
+
+# Local databases / Vector-stores
+# (In case you change Qdrant to write to disk instead of :memory:)
+qdrant_storage/
+storage/
+
+# IDE / OS specifics
+.vscode/
+.idea/
+.DS_Store
