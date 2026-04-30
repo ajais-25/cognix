@@ -5,6 +5,8 @@ import { PROMPT_TEMPLATE, SYSTEM_PROMPT } from "../prompt";
 import Conversation from "../models/conversation.model";
 import Message from "../models/messsage.model";
 import { getTavilyClient } from "../utils/tavily";
+import fs from "fs";
+import { uploadPdfToRag, chatWithRag } from "../utils/rag-client";
 
 const getConversationTitle = (query: string) => {
     const trimmed = query.trim();
@@ -257,6 +259,108 @@ const getAllConversations = async (req: Request, res: Response) => {
     }
 };
 
+const uploadPdfAndAsk = async (req: Request, res: Response) => {
+    try {
+        const { query } = req.body as { query?: string };
+        const file = req.file;
+
+        if (!req.user?._id) {
+            return res
+                .status(401)
+                .json({ success: false, message: "Unauthorized request" });
+        }
+
+        if (!query || !query.trim()) {
+            return res
+                .status(400)
+                .json({ success: false, message: "Query is required" });
+        }
+
+        if (!file) {
+            return res
+                .status(400)
+                .json({ success: false, message: "PDF file is required" });
+        }
+
+        const normalizedQuery = query.trim();
+
+        // 1. Create a conversation
+        const conversation = await Conversation.create({
+            title: getConversationTitle(normalizedQuery),
+            userId: req.user._id,
+        });
+
+        const conversationIdStr = conversation._id.toString();
+
+        await Message.create({
+            content: normalizedQuery,
+            role: "user",
+            conversationId: conversation._id,
+        });
+
+        // 2. Upload the file to the Python RAG service mapping it to this session/conversation
+        await uploadPdfToRag(file.path, conversationIdStr);
+
+        // Remove the temporary file from the Node backend after sending it to Python
+        fs.unlinkSync(file.path);
+
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+        res.setHeader("Content-Type", "text/event-stream");
+
+        res.write("\n<CONVERSATION_ID>\n");
+        res.write(JSON.stringify({ conversationId: conversationIdStr }));
+        res.write("\n</CONVERSATION_ID>\n");
+
+        res.write("\n<SOURCES>\n");
+        res.write("[]");
+        res.write("\n</SOURCES>\n");
+
+        // 3. Get the answer from the RAG service stream
+        const ragStream = await chatWithRag(normalizedQuery, conversationIdStr);
+
+        let assistantResponse = "";
+
+        await new Promise<void>((resolve, reject) => {
+            ragStream.on("data", (chunk: any) => {
+                const textPart = chunk.toString();
+                assistantResponse += textPart;
+                res.write(textPart);
+            });
+
+            ragStream.on("end", () => {
+                resolve();
+            });
+
+            ragStream.on("error", (err: any) => {
+                reject(err);
+            });
+        });
+
+        // 4. Save assistant response
+        if (assistantResponse.trim()) {
+            await Message.create({
+                content: assistantResponse,
+                role: "assistant",
+                conversationId: conversation._id,
+            });
+        }
+
+        res.end();
+    } catch (error) {
+        console.error("Error in uploadPdfAndAsk controller:", error);
+
+        if (req.file && fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error connecting to RAG service",
+        });
+    }
+};
+
 const getConversation = async (req: Request, res: Response) => {
     try {
         const { conversationId } = req.params as { conversationId?: string };
@@ -305,4 +409,10 @@ const getConversation = async (req: Request, res: Response) => {
     }
 };
 
-export { ask, askFollowUp, getAllConversations, getConversation };
+export {
+    ask,
+    askFollowUp,
+    getAllConversations,
+    getConversation,
+    uploadPdfAndAsk,
+};
