@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import User from "@/models/User";
 import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
+import z from "zod";
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,11 +29,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: result.error.flatten(),
+          message: "Invalid password format",
+          errors: z.treeifyError(result.error),
         },
-        {
-          status: 400,
-        },
+        { status: 400 },
       );
     }
 
