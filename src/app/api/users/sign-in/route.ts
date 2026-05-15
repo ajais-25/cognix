@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 import { Types } from "mongoose";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-import z from "zod";
+import { z } from "zod";
 
 const generateAuthToken = (_id: Types.ObjectId): string => {
   const secret = process.env.JWT_SECRET!;

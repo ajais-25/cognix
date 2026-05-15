@@ -2,7 +2,7 @@ import dbConnect from "@/lib/dbConnect";
 import User from "@/models/User";
 import { verifySchema } from "@/schemas/verifySchema";
 import { NextRequest, NextResponse } from "next/server";
-import z from "zod";
+import { z } from "zod";
 
 export async function POST(request: NextRequest) {
   try {

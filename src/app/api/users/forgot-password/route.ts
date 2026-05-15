@@ -6,7 +6,7 @@ import { sendForgotPasswordEmail } from "@/helpers/sendForgotPasswordEmail";
 import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { forgotPasswordSchema } from "@/schemas/forgotPasswordSchema";
-import z from "zod";
+import { z } from "zod";
 
 export async function POST(request: Request) {
   try {

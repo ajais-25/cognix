@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { resetPasswordSchema } from "@/schemas/resetPasswordSchema";
-import z from "zod";
+import { z } from "zod";
 
 export async function POST(request: NextRequest) {
   try {

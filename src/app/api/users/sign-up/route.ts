@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import User from "@/models/User";
 import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
-import z from "zod";
+import { z } from "zod";
 
 export async function POST(request: NextRequest) {
   try {
