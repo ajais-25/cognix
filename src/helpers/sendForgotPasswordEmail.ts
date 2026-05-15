@@ -12,7 +12,7 @@ export async function sendForgotPasswordEmail(
     const { data, error } = await resend.emails.send({
       from: "onboarding@resend.dev",
       to: email,
-      subject: "EduLink | Reset Password",
+      subject: "Cognix | Reset Password",
       react: ForgotPasswordEmail({ resetLink, expiryTime }),
     });
 

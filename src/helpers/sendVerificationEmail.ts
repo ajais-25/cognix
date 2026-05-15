@@ -13,7 +13,7 @@ export async function sendVerificationEmail(
     const { data, error } = await resend.emails.send({
       from: "onboarding@resend.dev",
       to: email,
-      subject: "EduLink | Verification Code",
+      subject: "Cognix | Verification Code",
       react: VerificationEmail({ name, verifyUrl, otp: verifyCode }),
     });
 

@@ -13,7 +13,7 @@ export async function sendPasswordResetConfirmationEmail(
     const { data, error } = await resend.emails.send({
       from: "onboarding@resend.dev",
       to: email,
-      subject: "EduLink | Password Reset Confirmation",
+      subject: "Cognix | Password Reset Confirmation",
       react: PasswordResetConfirmationEmail({ name, resetDate, supportEmail }),
     });
 
