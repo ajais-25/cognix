@@ -1,13 +1,36 @@
+import { getDataFromToken } from "@/helpers/getDataFromToken";
 import dbConnect from "@/lib/dbConnect";
 import Conversation from "@/models/Conversation";
-import { NextResponse } from "next/server";
+import User from "@/models/User";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
-  await dbConnect();
-
+export async function GET(request: NextRequest) {
   try {
-    // TODO: Replace with actual userId from auth middleware, Dummy for now
-    const userId = "683e0a4b8f1c2d3e4f5a6b7c";
+    const userId = getDataFromToken(request);
+
+    if (!userId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized - Invalid or expired token",
+        },
+        { status: 401 },
+      );
+    }
+
+    await dbConnect();
+
+    const user = await User.findById(userId).select("-password");
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized user",
+        },
+        { status: 401 },
+      );
+    }
 
     const conversations = await Conversation.find({ userId }).sort({
       updatedAt: -1,

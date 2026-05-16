@@ -13,13 +13,38 @@ import { z } from "zod";
 import dbConnect from "@/lib/dbConnect";
 import Conversation from "@/models/Conversation";
 import Message from "@/models/Message";
+import { getDataFromToken } from "@/helpers/getDataFromToken";
+import User from "@/models/User";
 
 export async function POST(request: NextRequest) {
   try {
     const { query, conversationId } = await request.json();
 
-    // TODO: Replace with actual userId from auth middleware, Dummy for now
-    const userId = "683e0a4b8f1c2d3e4f5a6b7c";
+    const userId = getDataFromToken(request);
+
+    if (!userId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized - Invalid or expired token",
+        },
+        { status: 401 },
+      );
+    }
+
+    await dbConnect();
+
+    const user = await User.findById(userId).select("-password");
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized user",
+        },
+        { status: 401 },
+      );
+    }
 
     if (!query) {
       return NextResponse.json(
@@ -124,8 +149,6 @@ export async function POST(request: NextRequest) {
 
           // 4. Save conversation and messages to DB
           try {
-            await dbConnect();
-
             let convId = conversationId;
 
             if (!convId) {
