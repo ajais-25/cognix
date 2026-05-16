@@ -10,10 +10,16 @@ import { followUpsSchema } from "@/schemas/followUpsSchema";
 import { askSchema } from "@/schemas/askSchema";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import dbConnect from "@/lib/dbConnect";
+import Conversation from "@/models/Conversation";
+import Message from "@/models/Message";
 
 export async function POST(request: NextRequest) {
   try {
-    const { query } = await request.json();
+    const { query, conversationId } = await request.json();
+
+    // TODO: Replace with actual userId from auth middleware, Dummy for now
+    const userId = "683e0a4b8f1c2d3e4f5a6b7c";
 
     if (!query) {
       return NextResponse.json(
@@ -27,7 +33,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = askSchema.safeParse({ query });
+    const result = askSchema.safeParse({ query, conversationId });
 
     if (!result.success) {
       return NextResponse.json(
@@ -64,15 +70,16 @@ export async function POST(request: NextRequest) {
     const encoder = new TextEncoder();
 
     // Helper to send an SSE event
-    const sse = (data: string) =>
-      encoder.encode(`data: ${data}\n\n`);
+    const sse = (data: string) => encoder.encode(`data: ${data}\n\n`);
 
     const readable = new ReadableStream({
       async start(controller) {
         try {
           // 1. Send web search results first
           controller.enqueue(
-            sse(JSON.stringify({ type: "searchResults", data: webSearchResults })),
+            sse(
+              JSON.stringify({ type: "searchResults", data: webSearchResults }),
+            ),
           );
 
           // 2. Stream answer chunks as plain text
@@ -105,14 +112,59 @@ export async function POST(request: NextRequest) {
           });
 
           const followUpText = followUpResponse.text;
+          let followUps: string[] = [];
+
           if (followUpText) {
             const parsed = JSON.parse(followUpText);
+            followUps = parsed.followUps ?? [];
             controller.enqueue(
-              sse(JSON.stringify({ type: "followUps", data: parsed.followUps })),
+              sse(JSON.stringify({ type: "followUps", data: followUps })),
             );
           }
 
-          // 4. Signal stream end
+          // 4. Save conversation and messages to DB
+          try {
+            await dbConnect();
+
+            let convId = conversationId;
+
+            if (!convId) {
+              const conversation = await Conversation.create({
+                userId,
+                title: query.length > 60 ? query.slice(0, 57) + "..." : query,
+              });
+              convId = conversation._id;
+            }
+
+            await Message.insertMany([
+              {
+                conversationId: convId,
+                role: "user",
+                content: query,
+              },
+              {
+                conversationId: convId,
+                role: "assistant",
+                content: fullAnswer,
+                sources: webSearchResults,
+                followUps,
+              },
+            ]);
+
+            // Send conversationId so the client can continue this chat
+            controller.enqueue(
+              sse(
+                JSON.stringify({
+                  type: "meta",
+                  data: { conversationId: convId },
+                }),
+              ),
+            );
+          } catch (dbError) {
+            console.error("Failed to save to DB:", dbError);
+          }
+
+          // 5. Signal stream end
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
         } catch (err) {

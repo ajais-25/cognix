@@ -1,9 +1,19 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
+export interface Source extends Document {
+  title: string;
+  url: string;
+  content: string;
+  rawContent: string;
+  score: number;
+}
+
 export interface Message extends Document {
   conversationId: Types.ObjectId;
   role: "user" | "assistant";
   content: string;
+  sources?: Source[];
+  followUps?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,6 +33,37 @@ const messageSchema: Schema<Message> = new Schema(
     content: {
       type: String,
       required: true,
+    },
+    sources: {
+      type: [
+        {
+          title: {
+            type: String,
+            required: true,
+          },
+          url: {
+            type: String,
+            required: true,
+          },
+          content: {
+            type: String,
+            required: true,
+          },
+          rawContent: {
+            type: String,
+            required: true,
+          },
+          score: {
+            type: Number,
+            required: true,
+          },
+        },
+      ],
+      default: undefined,
+    },
+    followUps: {
+      type: [String],
+      default: undefined,
     },
   },
   { timestamps: true },
