@@ -12,7 +12,7 @@ const publicRoutes = [
 
 const openRoutes = ["/chat"];
 
-export default async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error("JWT_SECRET is missing");
 
