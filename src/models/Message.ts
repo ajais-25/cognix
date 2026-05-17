@@ -4,7 +4,7 @@ export interface Source extends Document {
   title: string;
   url: string;
   content: string;
-  rawContent: string;
+  rawContent: string | null;
   score: number;
 }
 
@@ -51,7 +51,7 @@ const messageSchema: Schema<Message> = new Schema(
           },
           rawContent: {
             type: String,
-            required: true,
+            default: null,
           },
           score: {
             type: Number,

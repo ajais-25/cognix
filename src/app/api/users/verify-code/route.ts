@@ -2,7 +2,6 @@ import dbConnect from "@/lib/dbConnect";
 import User from "@/models/User";
 import { verifySchema } from "@/schemas/verifySchema";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,8 +37,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: "Invalid password format",
-          errors: z.treeifyError(result.error),
+          message: "Invalid verification code",
         },
         { status: 400 },
       );

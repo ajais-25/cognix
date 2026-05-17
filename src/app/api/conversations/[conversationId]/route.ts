@@ -1,12 +1,11 @@
 import dbConnect from "@/lib/dbConnect";
 import Message from "@/models/Message";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET({
-  params,
-}: {
-  params: Promise<{ conversationId: string }>;
-}) {
+export async function GET(
+  _request: NextRequest,
+  { params }: RouteContext<"/api/conversations/[conversationId]">,
+) {
   await dbConnect();
 
   try {

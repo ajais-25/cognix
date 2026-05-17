@@ -10,6 +10,14 @@ const publicRoutes = [
   "/verify-code",
 ];
 
+const publicApiRoutes = [
+  "/api/users/sign-up",
+  "/api/users/sign-in",
+  "/api/users/verify-code",
+  "/api/users/forgot-password",
+  "/api/users/reset-password",
+];
+
 const openRoutes = ["/chat"];
 
 export default async function proxy(request: NextRequest) {
@@ -24,10 +32,12 @@ export default async function proxy(request: NextRequest) {
   const signInUrl = new URL("/sign-in", request.nextUrl);
   signInUrl.searchParams.set("next", nextPath);
 
-  const isPublic = publicRoutes.some(
+  const isPublicPage = publicRoutes.some(
     (route) =>
       path === route || (route !== "/" && path.startsWith(route + "/")),
   );
+  const isPublicApi = publicApiRoutes.includes(path);
+  const isPublic = isPublicPage || isPublicApi;
 
   const isOpen = openRoutes.includes(path);
 
@@ -41,6 +51,11 @@ export default async function proxy(request: NextRequest) {
       return NextResponse.next();
     }
 
+    // Public API routes should never be blocked, even with a bad cookie
+    if (isPublicApi) {
+      return NextResponse.next();
+    }
+
     if (!isPublic && !token) {
       if (isApiRoute) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -51,7 +66,7 @@ export default async function proxy(request: NextRequest) {
     if (token) {
       await jwtVerify(token, encodedSecret);
 
-      if (isPublic) {
+      if (isPublicPage) {
         return NextResponse.redirect(new URL("/chat", request.nextUrl));
       }
     }
