@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUserByEmail) {
       if (existingUserByEmail.isVerified) {
-        return Response.json(
+        return NextResponse.json(
           {
             success: false,
             message: "User already exists with this email",
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return Response.json(
+    return NextResponse.json(
       {
         success: true,
         message: verificationEmailResult.success
