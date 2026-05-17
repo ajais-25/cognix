@@ -9,7 +9,6 @@ import {
   Text,
   Hr,
 } from "@react-email/components";
-import * as React from "react";
 import { Header } from "./components/Header";
 import { Button } from "./components/Button";
 import { Footer } from "./components/Footer";
