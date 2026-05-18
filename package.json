@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google/genai": "^2.3.0",
+    "@imagekit/next": "^2.1.5",
     "@react-email/components": "^1.0.12",
     "@tavily/core": "^0.7.3",
     "bcryptjs": "^3.0.3",
