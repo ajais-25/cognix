@@ -64,7 +64,7 @@ export async function GET(
       { status: 200 },
     );
   } catch (error) {
-    console.log("Error", error);
+    console.log("Error in /api/conversations/[conversationId]:", error);
     return NextResponse.json(
       {
         success: false,

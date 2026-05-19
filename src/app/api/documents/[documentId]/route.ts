@@ -58,7 +58,7 @@ export async function GET(
       { status: 200 },
     );
   } catch (error) {
-    console.error("Error fetching document", error);
+    console.log("Error in /api/documents/[documentId]:", error);
     return NextResponse.json(
       { success: false, message: "Failed to retrieve document" },
       { status: 500 },

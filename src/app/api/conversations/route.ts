@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       { status: 200 },
     );
   } catch (error) {
-    console.log("Error", error);
+    console.log("Error in /api/conversations:", error);
     return NextResponse.json(
       {
         success: false,

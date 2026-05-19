@@ -122,6 +122,7 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
+    console.log("Error in sign-in route:", error);
     return NextResponse.json(
       {
         success: false,

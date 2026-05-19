@@ -221,7 +221,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.log("Error", error);
+    console.log("Error in /api/ask:", error);
     return NextResponse.json(
       {
         success: false,

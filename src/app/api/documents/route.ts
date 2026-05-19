@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       { status: 200 },
     );
   } catch (error) {
-    console.error("Error fetching documents", error);
+    console.log("Error in /api/documents:", error);
     return NextResponse.json(
       { success: false, message: "Failed to retrieve documents" },
       { status: 500 },

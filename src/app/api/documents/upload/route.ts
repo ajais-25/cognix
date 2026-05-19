@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
-    console.log("Error uploading document", error);
+    console.log("Error in /api/documents/upload:", error);
 
     await UserDocument.findByIdAndUpdate(userDocument?._id, {
       status: "failed",

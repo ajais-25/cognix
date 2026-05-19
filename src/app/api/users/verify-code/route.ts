@@ -92,6 +92,7 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
+    console.log("Error in verify-code route:", error);
     return NextResponse.json(
       {
         success: false,

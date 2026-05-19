@@ -88,6 +88,7 @@ export async function POST(request: Request) {
       { status: 200 },
     );
   } catch (error) {
+    console.log("Error in forgot-password route:", error);
     return NextResponse.json(
       {
         success: false,

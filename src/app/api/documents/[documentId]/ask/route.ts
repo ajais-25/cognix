@@ -210,7 +210,7 @@ export async function POST(
       },
     });
   } catch (error) {
-    console.log("Error occured while asking from document", error);
+    console.log("Error in /api/documents/[documentId]/ask:", error);
     return NextResponse.json(
       {
         success: false,

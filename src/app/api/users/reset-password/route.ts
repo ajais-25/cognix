@@ -105,6 +105,7 @@ export async function POST(request: NextRequest) {
       { status: 200 },
     );
   } catch (error) {
+    console.log("Error in reset-password route:", error);
     return NextResponse.json(
       {
         success: false,

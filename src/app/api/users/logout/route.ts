@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
+    console.log("Error in logout route:", error);
     return NextResponse.json(
       {
         success: false,
