@@ -71,6 +71,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const isUserCoversation = await Conversation.findOne({
+      _id: conversationId,
+      userId,
+    });
+
+    if (!isUserCoversation) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Conversation not found or you don't have access to it",
+        },
+        { status: 404 },
+      );
+    }
+
     const webSearchResponse = await tavilyClient.search(query, {
       searchDepth: "advanced",
     });

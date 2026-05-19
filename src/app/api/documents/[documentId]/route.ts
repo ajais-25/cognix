@@ -1,13 +1,12 @@
-import { getDataFromToken } from "@/helpers/getDataFromToken";
 import dbConnect from "@/lib/dbConnect";
-import Conversation from "@/models/Conversation";
-import Message from "@/models/Message";
-import User from "@/models/User";
+import { getDataFromToken } from "@/helpers/getDataFromToken";
 import { NextRequest, NextResponse } from "next/server";
+import User from "@/models/User";
+import UserDocument from "@/models/UserDocument";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ conversationId: string }> },
+  { params }: { params: Promise<{ documentId: string }> },
 ) {
   try {
     const userId = getDataFromToken(request);
@@ -36,40 +35,32 @@ export async function GET(
       );
     }
 
-    const { conversationId } = await params;
+    const { documentId } = await params;
 
-    const isUserCoversation = await Conversation.findOne({
-      _id: conversationId,
-      userId,
-    });
+    const document = await UserDocument.findOne({ _id: documentId, userId });
 
-    if (!isUserCoversation) {
+    if (!document) {
       return NextResponse.json(
         {
           success: false,
-          message: "Conversation not found or you don't have access to it",
+          message: "Document not found or you don't have access to it",
         },
         { status: 404 },
       );
     }
 
-    const messages = await Message.find({ conversationId });
-
     return NextResponse.json(
       {
         success: true,
-        message: "Conversation fetched successfully",
-        data: messages,
+        message: "Document fetched successfully",
+        data: document,
       },
       { status: 200 },
     );
   } catch (error) {
-    console.log("Error", error);
+    console.error("Error fetching document", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: "Error occured while fetching conversation",
-      },
+      { success: false, message: "Failed to retrieve document" },
       { status: 500 },
     );
   }
