@@ -1,9 +1,9 @@
 import { QdrantVectorStore } from "@langchain/qdrant";
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 
-// Shared embeddings instance (text-embedding-004, 768 dims)
+// Shared embeddings instance (gemini-embedding-2, 768 dims)
 const embeddings = new GoogleGenerativeAIEmbeddings({
-  model: "text-embedding-004",
+  model: "gemini-embedding-2",
   apiKey: process.env.GEMINI_RAG_API_KEY!,
 });
 

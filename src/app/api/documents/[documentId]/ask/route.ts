@@ -116,11 +116,11 @@ export async function POST(
       userId,
     );
 
-    console.log(results);
+    const context = results.map((result) => result.content).join("\n\n");
 
     const prompt = PDF_RAG_PROMPT_TEMPLATE.replace(
       "{{DOCUMENT_CONTEXT}}",
-      results.join("\n\n"),
+      context,
     ).replace("{{USER_QUERY}}", query);
 
     // Stream the answer as plain text (no JSON schema)
