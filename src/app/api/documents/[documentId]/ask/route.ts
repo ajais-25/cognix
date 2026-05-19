@@ -1,25 +1,21 @@
-import { gemini } from "@/lib/gemini";
-import { tavilyClient } from "@/lib/tavily";
-import {
-  FOLLOW_UP_PROMPT_TEMPLATE,
-  FOLLOW_UP_SYSTEM_PROMPT,
-  PROMPT_TEMPLATE,
-  SYSTEM_PROMPT,
-} from "@/prompt";
-import { followUpsSchema } from "@/schemas/followUpsSchema";
-import { askSchema } from "@/schemas/askSchema";
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import { getDataFromToken } from "@/helpers/getDataFromToken";
 import dbConnect from "@/lib/dbConnect";
+import { gemini } from "@/lib/gemini";
+import { retrieveChunks } from "@/lib/rag";
 import Conversation from "@/models/Conversation";
 import Message from "@/models/Message";
-import { getDataFromToken } from "@/helpers/getDataFromToken";
 import User from "@/models/User";
+import UserDocument from "@/models/UserDocument";
+import { PDF_RAG_PROMPT_TEMPLATE, PDF_RAG_SYSTEM_PROMPT } from "@/prompt";
+import { documentAskSchema } from "@/schemas/documentAskSchema";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ documentId: string }> },
+) {
   try {
-    const { query, conversationId } = await request.json();
-
     const userId = getDataFromToken(request);
 
     if (!userId) {
@@ -46,6 +42,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { query, conversationId } = await request.json();
+    const { documentId } = await params;
+
     if (!query) {
       return NextResponse.json(
         {
@@ -58,7 +57,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = askSchema.safeParse({ query, conversationId });
+    const result = documentAskSchema.safeParse({ query, conversationId });
 
     if (!result.success) {
       return NextResponse.json(
@@ -88,16 +87,40 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const webSearchResponse = await tavilyClient.search(query, {
-      searchDepth: "advanced",
-    });
+    const document = await UserDocument.findOne({ _id: documentId, userId });
 
-    const webSearchResults = webSearchResponse.results;
+    if (!document) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Document not found or you don't have access to it",
+        },
+        { status: 404 },
+      );
+    }
 
-    // Create prompt with web search results
-    const prompt = PROMPT_TEMPLATE.replace(
-      "{{WEB_SEARCH_RESULTS}}",
-      JSON.stringify(webSearchResults),
+    if (document.status !== "ready") {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Document is not ready for querying yet. Please try again later.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const results = await retrieveChunks(
+      query,
+      document._id.toString(),
+      userId,
+    );
+
+    console.log(results);
+
+    const prompt = PDF_RAG_PROMPT_TEMPLATE.replace(
+      "{{DOCUMENT_CONTEXT}}",
+      results.join("\n\n"),
     ).replace("{{USER_QUERY}}", query);
 
     // Stream the answer as plain text (no JSON schema)
@@ -105,7 +128,7 @@ export async function POST(request: NextRequest) {
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
-        systemInstruction: SYSTEM_PROMPT,
+        systemInstruction: PDF_RAG_SYSTEM_PROMPT,
       },
     });
 
@@ -117,14 +140,7 @@ export async function POST(request: NextRequest) {
     const readable = new ReadableStream({
       async start(controller) {
         try {
-          // 1. Send web search results first
-          controller.enqueue(
-            sse(
-              JSON.stringify({ type: "searchResults", data: webSearchResults }),
-            ),
-          );
-
-          // 2. Stream answer chunks as plain text
+          // 1. Stream answer chunks as plain text
           let fullAnswer = "";
 
           for await (const chunk of stream) {
@@ -137,34 +153,7 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // 3. Generate follow-ups via a fast non-streaming call with JSON schema
-          const followUpPrompt = FOLLOW_UP_PROMPT_TEMPLATE.replace(
-            "{{USER_QUERY}}",
-            query,
-          ).replace("{{ANSWER}}", fullAnswer);
-
-          const followUpResponse = await gemini.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: followUpPrompt,
-            config: {
-              systemInstruction: FOLLOW_UP_SYSTEM_PROMPT,
-              responseMimeType: "application/json",
-              responseJsonSchema: z.toJSONSchema(followUpsSchema),
-            },
-          });
-
-          const followUpText = followUpResponse.text;
-          let followUps: string[] = [];
-
-          if (followUpText) {
-            const parsed = JSON.parse(followUpText);
-            followUps = parsed.followUps ?? [];
-            controller.enqueue(
-              sse(JSON.stringify({ type: "followUps", data: followUps })),
-            );
-          }
-
-          // 4. Save conversation and messages to DB
+          // 2. Save conversation and messages to DB
           try {
             let convId = conversationId;
 
@@ -180,14 +169,14 @@ export async function POST(request: NextRequest) {
               {
                 conversationId: convId,
                 role: "user",
+                documentId: document._id,
                 content: query,
               },
               {
                 conversationId: convId,
                 role: "assistant",
                 content: fullAnswer,
-                sources: webSearchResults,
-                followUps,
+                documentId: document._id,
               },
             ]);
 
@@ -204,7 +193,7 @@ export async function POST(request: NextRequest) {
             console.error("Failed to save to DB:", dbError);
           }
 
-          // 5. Signal stream end
+          // 3. Signal stream end
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
         } catch (err) {
@@ -221,15 +210,13 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.log("Error", error);
+    console.log("Error occured while asking from document", error);
     return NextResponse.json(
       {
         success: false,
-        message: "Error occured while chating",
+        message: "Error occured while asking from document",
       },
-      {
-        status: 500,
-      },
+      { status: 500 },
     );
   }
 }

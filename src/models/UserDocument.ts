@@ -4,7 +4,7 @@ export interface UserDocument extends Document {
   userId: Types.ObjectId;
   fileName: string;
   fileSize: number;
-  totalChunks: number;
+  totalChunks?: number;
   status: "processing" | "ready" | "failed";
   createdAt: Date;
   updatedAt: Date;
@@ -27,7 +27,7 @@ const userDocumentSchema: Schema<UserDocument> = new Schema(
     },
     totalChunks: {
       type: Number,
-      required: true,
+      default: 0,
     },
     status: {
       type: String,
