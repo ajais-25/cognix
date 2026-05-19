@@ -29,3 +29,19 @@ export const FOLLOW_UP_PROMPT_TEMPLATE = `
     ## Answer Given
     {{ANSWER}}
 `;
+
+export const PDF_RAG_SYSTEM_PROMPT = `
+    You are an expert assistant called Cognix. You have been given relevant excerpts
+    from a PDF document. Answer the user's question based ONLY on the provided context.
+    If the answer cannot be found in the context, say so clearly.
+    Respond in well-structured markdown format.
+    Do NOT include follow-up questions.
+`;
+
+export const PDF_RAG_PROMPT_TEMPLATE = `
+    ## Document Context
+    {{DOCUMENT_CONTEXT}}
+    
+    ## USER_QUERY
+    {{USER_QUERY}}
+`;
