@@ -106,9 +106,6 @@ export async function POST(request: NextRequest) {
       await gemini.models.countTokens({
         model: "gemini-3-flash-preview",
         contents: prompt,
-        config: {
-          systemInstruction: SYSTEM_PROMPT,
-        },
       });
 
     const normalQueryEstimatedCost = estimateQueryCost(
@@ -189,9 +186,6 @@ export async function POST(request: NextRequest) {
             await gemini.models.countTokens({
               model: "gemini-3-flash-preview",
               contents: followUpPrompt,
-              config: {
-                systemInstruction: FOLLOW_UP_SYSTEM_PROMPT,
-              },
             });
 
           const followUpEstimatedCost = estimateQueryCost(

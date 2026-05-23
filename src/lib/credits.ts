@@ -43,7 +43,7 @@ export async function deductQueryCredits(params: {
   const updatedUser = await User.findByIdAndUpdate(
     params.userId,
     { $inc: { credits: -creditsDeducted } },
-    { new: true },
+    { returnDocument: "after" },
   );
 
   if (!updatedUser) {
@@ -82,7 +82,7 @@ export async function deductUploadCredits(params: {
   const updatedUser = await User.findByIdAndUpdate(
     params.userId,
     { $inc: { credits: -creditsDeducted } },
-    { new: true },
+    { returnDocument: "after" },
   );
 
   if (!updatedUser) {

@@ -128,9 +128,6 @@ export async function POST(
     const { totalTokens: inputTokens } = await gemini.models.countTokens({
       model: "gemini-3-flash-preview",
       contents: prompt,
-      config: {
-        systemInstruction: PDF_RAG_SYSTEM_PROMPT,
-      },
     });
 
     const estimatedCost = estimateQueryCost(inputTokens ?? 0);

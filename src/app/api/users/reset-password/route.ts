@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
           password: hashedPassword,
         },
       },
-      { new: true },
+      { returnDocument: "after" },
     );
 
     if (!user) {
