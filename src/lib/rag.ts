@@ -3,54 +3,40 @@ import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { QdrantVectorStore } from "@langchain/qdrant";
 import { embeddings, COLLECTION_NAME, getVectorStore } from "./vectorStore";
 
-// ─── INGESTION ───────────────────────────────────────────────
-
-interface IngestResult {
-  totalChunks: number;
-}
-
-export async function ingestPDF(
+// Phase 1 - Split
+export async function splitPDF(
   pdfBuffer: Buffer,
   documentId: string,
   userId: string,
-): Promise<IngestResult> {
-  // 1. Load PDF from buffer
+) {
   const blob = new Blob([new Uint8Array(pdfBuffer)], {
     type: "application/pdf",
   });
-  const loader = new PDFLoader(blob);
-  const docs = await loader.load();
+  const docs = await new PDFLoader(blob).load();
 
-  // 2. Split into chunks
-  const splitter = new RecursiveCharacterTextSplitter({
+  const chunks = await new RecursiveCharacterTextSplitter({
     chunkSize: 1000,
     chunkOverlap: 200,
-  });
-  const chunks = await splitter.splitDocuments(docs);
+  }).splitDocuments(docs);
 
-  // 3. Attach metadata for filtering
-  const taggedChunks = chunks.map((chunk, index) => ({
+  return chunks.map((chunk, index) => ({
     ...chunk,
-    metadata: {
-      ...chunk.metadata,
-      documentId,
-      userId,
-      chunkIndex: index,
-    },
+    metadata: { ...chunk.metadata, documentId, userId, chunkIndex: index },
   }));
+}
 
-  // 4. Embed + store in Qdrant
+// Phase 2 - Embed
+export async function embedChunks(
+  taggedChunks: Awaited<ReturnType<typeof splitPDF>>,
+) {
   await QdrantVectorStore.fromDocuments(taggedChunks, embeddings, {
     url: process.env.QDRANT_URL!,
     apiKey: process.env.QDRANT_API_KEY!,
     collectionName: COLLECTION_NAME,
   });
-
-  return { totalChunks: taggedChunks.length };
 }
 
-// ─── RETRIEVAL ───────────────────────────────────────────────
-
+// Phase 3 - Retrieve
 interface RetrievedChunk {
   content: string;
   score: number;
@@ -65,7 +51,6 @@ export async function retrieveChunks(
 ): Promise<RetrievedChunk[]> {
   const vectorStore = await getVectorStore();
 
-  // Similarity search with metadata filtering
   const results = await vectorStore.similaritySearchWithScore(query, topK, {
     must: [
       { key: "metadata.documentId", match: { value: documentId } },

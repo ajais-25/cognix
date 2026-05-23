@@ -17,6 +17,10 @@ export function estimateQueryCost(inputTokens: number): number {
   );
 }
 
+export function estimateUploadCost(totalChunks: number): number {
+  return totalChunks * CREDITS_PER_CHUNK;
+}
+
 export async function deductQueryCredits(params: {
   userId: string;
   balance: number;
@@ -42,6 +46,12 @@ export async function deductQueryCredits(params: {
     { new: true },
   );
 
+  if (!updatedUser) {
+    console.warn(
+      `[deductQueryCredits] User ${params.userId} not found after update — balanceAfter in transaction log may be inaccurate`,
+    );
+  }
+
   const newBalance = updatedUser?.credits ?? params.balance - creditsDeducted;
 
   await CreditTransaction.create({
@@ -66,13 +76,20 @@ export async function deductUploadCredits(params: {
   newBalance: number;
   lowBalance: boolean;
 }> {
-  const creditsDeducted = params.totalChunks * CREDITS_PER_CHUNK;
+  const rawCost = params.totalChunks * CREDITS_PER_CHUNK;
+  const creditsDeducted = Math.min(rawCost, params.balance); // safety cap — prevents negative balance on race condition
 
   const updatedUser = await User.findByIdAndUpdate(
     params.userId,
     { $inc: { credits: -creditsDeducted } },
     { new: true },
   );
+
+  if (!updatedUser) {
+    console.warn(
+      `[deductUploadCredits] User ${params.userId} not found after update — balanceAfter in transaction log may be inaccurate`,
+    );
+  }
 
   const newBalance = updatedUser?.credits ?? params.balance - creditsDeducted;
 

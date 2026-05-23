@@ -1,6 +1,7 @@
 import { getDataFromToken } from "@/helpers/getDataFromToken";
+import { deductUploadCredits, estimateUploadCost } from "@/lib/credits";
 import dbConnect from "@/lib/dbConnect";
-import { ingestPDF } from "@/lib/rag";
+import { embedChunks, splitPDF } from "@/lib/rag";
 import User from "@/models/User";
 import UserDocument from "@/models/UserDocument";
 import { NextRequest, NextResponse } from "next/server";
@@ -79,17 +80,52 @@ export async function POST(request: NextRequest) {
       fileSize: file.size,
     });
 
-    // Ingestion
-    const { totalChunks } = await ingestPDF(
+    // Split
+    const taggedChunks = await splitPDF(
       buffer,
       userDocument._id.toString(),
       userId,
     );
+    const totalChunks = taggedChunks.length;
+
+    const uploadCost = estimateUploadCost(totalChunks);
+
+    const freshUser = await User.findById(userId).select("credits").lean();
+    const currentCredits =
+      (freshUser as { credits?: number } | null)?.credits ?? user.credits;
+
+    if (currentCredits < uploadCost) {
+      // Clean up the document record
+      await UserDocument.findByIdAndDelete(userDocument._id);
+
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Insufficient credits. This document requires ${uploadCost} credits.`,
+          data: {
+            creditsRemaining: currentCredits,
+            uploadCost, // UI can tell user exactly how many credits to top up
+          },
+        },
+        { status: 402 },
+      );
+    }
+
+    // Embedding
+    await embedChunks(taggedChunks);
 
     // Update document with total chunks and status
     userDocument.totalChunks = totalChunks;
     userDocument.status = "ready";
     await userDocument.save();
+
+    const { creditsDeducted, newBalance, lowBalance } =
+      await deductUploadCredits({
+        userId,
+        balance: currentCredits,
+        totalChunks,
+        referenceId: userDocument._id.toString(),
+      });
 
     return NextResponse.json(
       {
@@ -98,8 +134,11 @@ export async function POST(request: NextRequest) {
         data: {
           documentId: userDocument._id,
           fileName: userDocument.fileName,
-          totalChunks: userDocument.totalChunks,
+          totalChunks,
           status: userDocument.status,
+          creditsUsed: creditsDeducted,
+          creditsRemaining: newBalance,
+          lowBalance,
         },
       },
       { status: 201 },
