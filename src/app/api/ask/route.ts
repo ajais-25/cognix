@@ -15,6 +15,7 @@ import Conversation from "@/models/Conversation";
 import Message from "@/models/Message";
 import { getDataFromToken } from "@/helpers/getDataFromToken";
 import User from "@/models/User";
+import { deductQueryCredits, estimateQueryCost } from "@/lib/credits";
 
 export async function POST(request: NextRequest) {
   try {
@@ -100,6 +101,35 @@ export async function POST(request: NextRequest) {
       JSON.stringify(webSearchResults),
     ).replace("{{USER_QUERY}}", query);
 
+    // Count normal query input tokens
+    const { totalTokens: normalQueryInputTokens } =
+      await gemini.models.countTokens({
+        model: "gemini-3-flash-preview",
+        contents: prompt,
+        config: {
+          systemInstruction: SYSTEM_PROMPT,
+        },
+      });
+
+    const normalQueryEstimatedCost = estimateQueryCost(
+      normalQueryInputTokens ?? 0,
+    );
+
+    if (user.credits < normalQueryEstimatedCost) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Insufficient credits to complete this query. Please top up.",
+          data: {
+            creditsRemaining: user.credits,
+            estimatedCost: normalQueryEstimatedCost, // tells the UI exactly how many credits are needed
+          },
+        },
+        { status: 402 },
+      );
+    }
+
     // Stream the answer as plain text (no JSON schema)
     const stream = await gemini.models.generateContentStream({
       model: "gemini-3-flash-preview",
@@ -126,6 +156,13 @@ export async function POST(request: NextRequest) {
 
           // 2. Stream answer chunks as plain text
           let fullAnswer = "";
+          let normalQueryUsageMetadata:
+            | {
+              promptTokenCount?: number;
+              candidatesTokenCount?: number;
+              totalTokenCount?: number;
+            }
+            | undefined;
 
           for await (const chunk of stream) {
             const text = chunk.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -135,6 +172,10 @@ export async function POST(request: NextRequest) {
                 sse(JSON.stringify({ type: "text", data: text })),
               );
             }
+
+            if (chunk.usageMetadata) {
+              normalQueryUsageMetadata = chunk.usageMetadata;
+            }
           }
 
           // 3. Generate follow-ups via a fast non-streaming call with JSON schema
@@ -142,6 +183,34 @@ export async function POST(request: NextRequest) {
             "{{USER_QUERY}}",
             query,
           ).replace("{{ANSWER}}", fullAnswer);
+
+          // Count follow-up input tokens
+          const { totalTokens: followUpInputTokens } =
+            await gemini.models.countTokens({
+              model: "gemini-3-flash-preview",
+              contents: followUpPrompt,
+              config: {
+                systemInstruction: FOLLOW_UP_SYSTEM_PROMPT,
+              },
+            });
+
+          const followUpEstimatedCost = estimateQueryCost(
+            followUpInputTokens ?? 0,
+          );
+
+          if (user.credits - normalQueryEstimatedCost < followUpEstimatedCost) {
+            controller.enqueue(
+              sse(
+                JSON.stringify({
+                  type: "error",
+                  data: "Insufficient credits to generate follow-up questions.",
+                }),
+              ),
+            );
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+            return;
+          }
 
           const followUpResponse = await gemini.models.generateContent({
             model: "gemini-3-flash-preview",
@@ -155,6 +224,17 @@ export async function POST(request: NextRequest) {
 
           const followUpText = followUpResponse.text;
           let followUps: string[] = [];
+          let followUpUsageMetadata:
+            | {
+              promptTokenCount?: number;
+              candidatesTokenCount?: number;
+              totalTokenCount?: number;
+            }
+            | undefined;
+
+          if (followUpResponse.usageMetadata) {
+            followUpUsageMetadata = followUpResponse.usageMetadata;
+          }
 
           if (followUpText) {
             const parsed = JSON.parse(followUpText);
@@ -191,12 +271,41 @@ export async function POST(request: NextRequest) {
               },
             ]);
 
-            // Send conversationId so the client can continue this chat
+            const usageMetadata = {
+              promptTokenCount:
+                (normalQueryUsageMetadata?.promptTokenCount ?? 0) +
+                (followUpUsageMetadata?.promptTokenCount ?? 0),
+              candidatesTokenCount:
+                (normalQueryUsageMetadata?.candidatesTokenCount ?? 0) +
+                (followUpUsageMetadata?.candidatesTokenCount ?? 0),
+              totalTokenCount:
+                (normalQueryUsageMetadata?.totalTokenCount ?? 0) +
+                (followUpUsageMetadata?.totalTokenCount ?? 0),
+            };
+
+            const { creditsDeducted, newBalance, lowBalance } =
+              await deductQueryCredits({
+                userId,
+                balance: user.credits,
+                tokenMeta: {
+                  promptTokens: usageMetadata?.promptTokenCount ?? 0,
+                  outputTokens: usageMetadata?.candidatesTokenCount ?? 0,
+                  totalTokens: usageMetadata?.totalTokenCount ?? 0,
+                },
+                referenceId: convId?.toString(),
+              });
+
+            // Send metadata so the client can continue this chat
             controller.enqueue(
               sse(
                 JSON.stringify({
                   type: "meta",
-                  data: { conversationId: convId },
+                  data: {
+                    conversationId: convId,
+                    creditsUsed: creditsDeducted,
+                    creditsRemaining: newBalance,
+                    lowBalance, // frontend shows warning banner when true
+                  },
                 }),
               ),
             );
