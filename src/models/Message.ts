@@ -10,7 +10,7 @@ export interface Source extends Document {
 
 export interface Message extends Document {
   conversationId: Types.ObjectId;
-  role: "user" | "assistant";
+  role: "user" | "model";
   content: string;
   sources?: Source[];
   followUps?: string[];
@@ -27,7 +27,7 @@ const messageSchema: Schema<Message> = new Schema(
     },
     role: {
       type: String,
-      enum: ["user", "assistant"],
+      enum: ["user", "model"],
       required: true,
     },
     content: {

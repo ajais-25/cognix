@@ -5,6 +5,7 @@ import {
   FOLLOW_UP_SYSTEM_PROMPT,
   PROMPT_TEMPLATE,
   SYSTEM_PROMPT,
+  WEB_SEARCH_DECISION_PROMPT,
 } from "@/prompt";
 import { followUpsSchema } from "@/schemas/followUpsSchema";
 import { askSchema } from "@/schemas/askSchema";
@@ -100,23 +101,76 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const webSearchResponse = await tavilyClient.search(query, {
-      searchDepth: "advanced",
-    });
+    let chatHistory: { role: "user" | "model"; content: string }[] = [];
+    if (conversationId) {
+      const previousMessages = await Message.find({ conversationId })
+        .sort({ createdAt: 1 })
+        .select("role content")
+        .lean<{ role: "user" | "model"; content: string }[]>();
+      chatHistory = previousMessages;
+    }
 
-    const webSearchResults = webSearchResponse.results;
+    let webSearchResults: Record<string, unknown>[] = [];
 
-    // Create prompt with web search results
-    const prompt = PROMPT_TEMPLATE.replace(
-      "{{WEB_SEARCH_RESULTS}}",
-      JSON.stringify(webSearchResults),
-    ).replace("{{USER_QUERY}}", query);
+    let needsWebSearch = true;
+    try {
+      const decisionPrompt = WEB_SEARCH_DECISION_PROMPT.replace(
+        "{{USER_QUERY}}",
+        query,
+      );
+
+      const decisionResponse = await gemini.models.generateContent({
+        model: "gemini-2.5-flash-lite",
+        contents: decisionPrompt,
+        config: { responseMimeType: "application/json" },
+      });
+
+      const decisionText = decisionResponse.text?.trim();
+      if (decisionText) {
+        const decision = JSON.parse(decisionText) as {
+          needsWebSearch: boolean;
+          reason: string;
+        };
+        needsWebSearch = decision.needsWebSearch;
+        console.log(
+          `[WebSearch] needsWebSearch=${needsWebSearch} | reason: ${decision.reason}`,
+        );
+      }
+    } catch (err) {
+      console.warn(
+        "[WebSearch] Intent detection failed, defaulting to web search:",
+        err,
+      );
+    }
+
+    if (needsWebSearch) {
+      const webSearchResponse = await tavilyClient.search(query, {
+        searchDepth: "advanced",
+      });
+      webSearchResults = webSearchResponse.results;
+    }
+
+    // Build the current-turn prompt
+    const currentPrompt = needsWebSearch
+      ? PROMPT_TEMPLATE.replace(
+        "{{WEB_SEARCH_RESULTS}}",
+        JSON.stringify(webSearchResults),
+      ).replace("{{USER_QUERY}}", query)
+      : `## USER_QUERY\n    ${query}`;
+
+    const contents = [
+      ...chatHistory.map((m) => ({
+        role: m.role,
+        parts: [{ text: m.content }],
+      })),
+      { role: "user" as const, parts: [{ text: currentPrompt }] },
+    ];
 
     // Count normal query input tokens
     const { totalTokens: normalQueryInputTokens } =
       await gemini.models.countTokens({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
+        model: "gemini-2.5-flash-lite",
+        contents,
       });
 
     const normalQueryEstimatedCost = estimateQueryCost(
@@ -141,7 +195,7 @@ export async function POST(request: NextRequest) {
     // Stream the answer as plain text (no JSON schema)
     const stream = await gemini.models.generateContentStream({
       model: "gemini-3-flash-preview",
-      contents: prompt,
+      contents,
       config: {
         systemInstruction: SYSTEM_PROMPT,
       },
@@ -195,7 +249,7 @@ export async function POST(request: NextRequest) {
           // Count follow-up input tokens
           const { totalTokens: followUpInputTokens } =
             await gemini.models.countTokens({
-              model: "gemini-3-flash-preview",
+              model: "gemini-2.5-flash-lite",
               contents: followUpPrompt,
             });
 
@@ -218,7 +272,7 @@ export async function POST(request: NextRequest) {
           }
 
           const followUpResponse = await gemini.models.generateContent({
-            model: "gemini-3-flash-preview",
+            model: "gemini-2.5-flash-lite",
             contents: followUpPrompt,
             config: {
               systemInstruction: FOLLOW_UP_SYSTEM_PROMPT,
@@ -270,7 +324,7 @@ export async function POST(request: NextRequest) {
               },
               {
                 conversationId: convId,
-                role: "assistant",
+                role: "model",
                 content: fullAnswer,
                 sources: webSearchResults,
                 followUps,

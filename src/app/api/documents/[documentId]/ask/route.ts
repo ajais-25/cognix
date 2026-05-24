@@ -133,6 +133,16 @@ export async function POST(
       );
     }
 
+    // Fetch prior messages for this conversation (if continuing one)
+    let chatHistory: { role: "user" | "model"; content: string }[] = [];
+    if (conversationId) {
+      const previousMessages = await Message.find({ conversationId })
+        .sort({ createdAt: 1 })
+        .select("role content")
+        .lean<{ role: "user" | "model"; content: string }[]>();
+      chatHistory = previousMessages;
+    }
+
     const results = await retrieveChunks(
       query,
       document._id.toString(),
@@ -141,15 +151,23 @@ export async function POST(
 
     const context = results.map((result) => result.content).join("\n\n");
 
-    const prompt = PDF_RAG_PROMPT_TEMPLATE.replace(
+    const currentPrompt = PDF_RAG_PROMPT_TEMPLATE.replace(
       "{{DOCUMENT_CONTEXT}}",
       context,
     ).replace("{{USER_QUERY}}", query);
 
+    const contents = [
+      ...chatHistory.map((m) => ({
+        role: m.role,
+        parts: [{ text: m.content }],
+      })),
+      { role: "user" as const, parts: [{ text: currentPrompt }] },
+    ];
+
     // Count input tokens
     const { totalTokens: inputTokens } = await gemini.models.countTokens({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
+      model: "gemini-2.5-flash-lite",
+      contents,
     });
 
     const estimatedCost = estimateQueryCost(inputTokens ?? 0);
@@ -177,7 +195,7 @@ export async function POST(
     // Stream the answer as plain text (no JSON schema)
     const stream = await gemini.models.generateContentStream({
       model: "gemini-3-flash-preview",
-      contents: prompt,
+      contents,
       config: {
         systemInstruction: PDF_RAG_SYSTEM_PROMPT,
       },
@@ -242,7 +260,7 @@ export async function POST(
               },
               {
                 conversationId: convId,
-                role: "assistant",
+                role: "model",
                 content: fullAnswer,
               },
             ]);
@@ -294,7 +312,7 @@ export async function POST(
             );
           }
 
-          // 3. Signal stream end
+          // 4. Signal stream end
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
         } catch (err) {
