@@ -53,13 +53,18 @@ export async function GET(
       );
     }
 
-    const messages = await Message.find({ conversationId });
+    const messages = await Message.find({ conversationId }).sort({
+      createdAt: 1,
+    });
 
     return NextResponse.json(
       {
         success: true,
         message: "Conversation fetched successfully",
-        data: messages,
+        data: {
+          conversation: isUserCoversation,
+          messages,
+        },
       },
       { status: 200 },
     );

@@ -86,6 +86,28 @@ export async function POST(
           { status: 404 },
         );
       }
+
+      if (isUserCoversation.type !== "document") {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "This conversation is a chat conversation. Use the normal ask route instead.",
+          },
+          { status: 400 },
+        );
+      }
+
+      if (isUserCoversation.documentId?.toString() !== documentId) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "This conversation belongs to a different document.",
+          },
+          { status: 400 },
+        );
+      }
     }
 
     const document = await UserDocument.findOne({ _id: documentId, userId });
@@ -206,6 +228,8 @@ export async function POST(
               const conversation = await Conversation.create({
                 userId,
                 title: query.length > 60 ? query.slice(0, 57) + "..." : query,
+                type: "document",
+                documentId: document._id,
               });
               convId = conversation._id;
             }
@@ -214,14 +238,12 @@ export async function POST(
               {
                 conversationId: convId,
                 role: "user",
-                documentId: document._id,
                 content: query,
               },
               {
                 conversationId: convId,
                 role: "assistant",
                 content: fullAnswer,
-                documentId: document._id,
               },
             ]);
           } catch (dbError) {

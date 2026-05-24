@@ -87,6 +87,17 @@ export async function POST(request: NextRequest) {
           { status: 404 },
         );
       }
+
+      if (isUserCoversation.type !== "chat") {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "This conversation is a document conversation. Use the document ask route instead.",
+          },
+          { status: 400 },
+        );
+      }
     }
 
     const webSearchResponse = await tavilyClient.search(query, {
@@ -246,6 +257,7 @@ export async function POST(request: NextRequest) {
               const conversation = await Conversation.create({
                 userId,
                 title: query.length > 60 ? query.slice(0, 57) + "..." : query,
+                type: "chat",
               });
               convId = conversation._id;
             }

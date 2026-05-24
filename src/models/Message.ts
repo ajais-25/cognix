@@ -14,7 +14,6 @@ export interface Message extends Document {
   content: string;
   sources?: Source[];
   followUps?: string[];
-  documentId?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -66,11 +65,7 @@ const messageSchema: Schema<Message> = new Schema(
       type: [String],
       default: undefined,
     },
-    documentId: {
-      type: Schema.Types.ObjectId,
-      ref: "UserDocument",
-      default: null,
-    },
+
   },
   { timestamps: true },
 );
