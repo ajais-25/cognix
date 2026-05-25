@@ -54,12 +54,13 @@ export function useChat(mode: ChatMode) {
 
         const res = await axios.post(
           url,
-          { query, conversationId },
+          { query, conversationId: conversationId || undefined },
           {
             headers: { "Content-Type": "application/json" },
             signal: abortRef.current.signal,
             responseType: "stream",
             adapter: "fetch",
+            transformResponse: [data => data],
           }
         );
 
@@ -140,8 +141,10 @@ export function useChat(mode: ChatMode) {
                             ...m,
                             content:
                               m.content ||
-                              ((event.data as { message?: string })?.message ??
-                                "An error occurred."),
+                              (typeof event.data === "string"
+                                ? event.data
+                                : (event.data as { message?: string })?.message ??
+                                  "An error occurred."),
                           }
                         : m,
                     ),
@@ -159,20 +162,29 @@ export function useChat(mode: ChatMode) {
         let errMsg = "Connection error. Please try again.";
         if (axios.isAxiosError(err) && err.response?.data) {
           try {
-            const stream = err.response.data;
-            const reader = stream.getReader();
-            const decoder = new TextDecoder();
-            let errorString = "";
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              errorString += decoder.decode(value, { stream: true });
+            const data = err.response.data;
+            if (data instanceof ReadableStream || (data && typeof (data as any).getReader === "function")) {
+              const reader = (data as any).getReader();
+              const decoder = new TextDecoder();
+              let errorString = "";
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                errorString += decoder.decode(value, { stream: true });
+              }
+              const parsed = JSON.parse(errorString);
+              errMsg = parsed.message ?? errMsg;
+            } else if (typeof data === "string") {
+              const parsed = JSON.parse(data);
+              errMsg = parsed.message ?? errMsg;
+            } else if (typeof data === "object" && data !== null) {
+              errMsg = (data as any).message ?? errMsg;
             }
-            const parsed = JSON.parse(errorString);
-            errMsg = parsed.message ?? errMsg;
           } catch {
             // fallback
           }
+        } else if (err instanceof Error) {
+          errMsg = err.message;
         }
 
         setMessages((prev) =>

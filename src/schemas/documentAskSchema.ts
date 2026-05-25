@@ -2,5 +2,5 @@ import { z } from "zod";
 
 export const documentAskSchema = z.object({
   query: z.string().min(1).max(2000),
-  conversationId: z.string().optional(),
+  conversationId: z.string().nullable().optional(),
 });
