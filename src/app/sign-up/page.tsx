@@ -13,9 +13,24 @@ export default function SignUpPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Password validation rules matching signUpSchema
+  const hasMinLength = password.length >= 6;
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  const isPasswordValid = hasMinLength && hasUppercase && hasLowercase && hasNumber && hasSpecial;
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!isPasswordValid) {
+      setError("Password does not meet all strength requirements.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -99,12 +114,45 @@ export default function SignUpPage() {
               className="form-input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 8 characters"
+              placeholder="At least 6 characters"
               required
-              minLength={8}
               autoComplete="new-password"
             />
           </div>
+
+          {password && (
+            <div
+              className="password-criteria"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "4px",
+                fontSize: "12px",
+                color: "var(--text-secondary)",
+                backgroundColor: "var(--bg-base)",
+                padding: "10px",
+                borderRadius: "var(--radius-md)",
+                border: "1px solid var(--border)",
+              }}
+            >
+              <div style={{ fontWeight: 600, marginBottom: "2px", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Password Strength:</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", color: hasMinLength ? "var(--green)" : "var(--text-tertiary)" }}>
+                <span style={{ transition: "all 0.15s" }}>{hasMinLength ? "✓" : "○"}</span> At least 6 characters
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", color: hasUppercase ? "var(--green)" : "var(--text-tertiary)" }}>
+                <span style={{ transition: "all 0.15s" }}>{hasUppercase ? "✓" : "○"}</span> At least one uppercase letter
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", color: hasLowercase ? "var(--green)" : "var(--text-tertiary)" }}>
+                <span style={{ transition: "all 0.15s" }}>{hasLowercase ? "✓" : "○"}</span> At least one lowercase letter
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", color: hasNumber ? "var(--green)" : "var(--text-tertiary)" }}>
+                <span style={{ transition: "all 0.15s" }}>{hasNumber ? "✓" : "○"}</span> At least one number
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", color: hasSpecial ? "var(--green)" : "var(--text-tertiary)" }}>
+                <span style={{ transition: "all 0.15s" }}>{hasSpecial ? "✓" : "○"}</span> At least one special character
+              </div>
+            </div>
+          )}
 
           {error && <p className="auth-error">{error}</p>}
 
@@ -112,7 +160,7 @@ export default function SignUpPage() {
             id="signup-submit-btn"
             type="submit"
             className="auth-submit-btn"
-            disabled={isLoading}
+            disabled={isLoading || !isPasswordValid}
           >
             {isLoading ? "Creating account…" : "Create account"}
           </button>
