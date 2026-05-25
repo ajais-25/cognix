@@ -54,6 +54,7 @@ export interface StreamingMessage {
   sources?: SearchResult[];
   followUps?: string[];
   isStreaming?: boolean;
+  isError?: boolean;
 }
 
 export interface ChatState {

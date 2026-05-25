@@ -145,6 +145,7 @@ export function useChat(mode: ChatMode) {
                                 ? event.data
                                 : (event.data as { message?: string })?.message ??
                                   "An error occurred."),
+                            isError: true,
                           }
                         : m,
                     ),
@@ -173,18 +174,22 @@ export function useChat(mode: ChatMode) {
                 errorString += decoder.decode(value, { stream: true });
               }
               const parsed = JSON.parse(errorString);
-              errMsg = parsed.message ?? errMsg;
+              errMsg = parsed.message ?? parsed.error ?? errMsg;
             } else if (typeof data === "string") {
               const parsed = JSON.parse(data);
-              errMsg = parsed.message ?? errMsg;
+              errMsg = parsed.message ?? parsed.error ?? errMsg;
             } else if (typeof data === "object" && data !== null) {
-              errMsg = (data as any).message ?? errMsg;
+              errMsg = (data as any).message ?? (data as any).error ?? errMsg;
             }
           } catch {
             // fallback
           }
         } else if (err instanceof Error) {
           errMsg = err.message;
+        }
+
+        if (errMsg === "Unauthorized" || errMsg === "Invalid or expired token") {
+          errMsg = "Please sign in to send messages.";
         }
 
         setMessages((prev) =>
@@ -194,6 +199,7 @@ export function useChat(mode: ChatMode) {
                   ...m,
                   content: errMsg,
                   isStreaming: false,
+                  isError: true,
                 }
               : m,
           ),

@@ -1728,4 +1728,58 @@ html, body {
   padding: 28px 32px;
 }
 
+/* ─── Error Message Bubble ────────────────────────────────────── */
+.message-bubble-error {
+  background: var(--red-bg);
+  border: 1px solid color-mix(in srgb, var(--red) 20%, transparent);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  max-width: 100%;
+  flex: 1;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.04);
+}
+
+[data-theme="dark"] .message-bubble-error {
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.08);
+}
+
+.error-message-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.error-message-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--red);
+}
+
+.error-message-icon {
+  flex-shrink: 0;
+}
+
+.error-message-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.error-message-text {
+  font-size: 14px;
+  color: var(--red);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  font-weight: 500;
+}
+
+.message-avatar-error {
+  color: var(--red) !important;
+  background: var(--red-bg) !important;
+  border-color: color-mix(in srgb, var(--red) 30%, transparent) !important;
+}
+
 

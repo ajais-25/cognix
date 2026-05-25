@@ -18,11 +18,12 @@ export default function MessageBubble({
   onFollowUp,
 }: MessageBubbleProps) {
   const isUser = message.role === "user";
+  const isError = message.isError;
 
   return (
     <div className={`message-row ${isUser ? "message-row-user" : "message-row-model"}`}>
       {!isUser && (
-        <div className="message-avatar">
+        <div className={`message-avatar ${isError ? "message-avatar-error" : ""}`}>
           <svg
             width="14"
             height="14"
@@ -40,9 +41,31 @@ export default function MessageBubble({
         </div>
       )}
 
-      <div className={`message-bubble ${isUser ? "message-bubble-user" : "message-bubble-model"}`}>
+      <div className={`message-bubble ${isUser ? "message-bubble-user" : isError ? "message-bubble-error" : "message-bubble-model"}`}>
         {isUser ? (
           <p className="message-user-text">{message.content}</p>
+        ) : isError ? (
+          <div className="error-message-container">
+            <div className="error-message-header">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="error-message-icon"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span className="error-message-title">Error</span>
+            </div>
+            <p className="error-message-text">{message.content}</p>
+          </div>
         ) : (
           <>
             {/* Sources row — shown for web search results */}
