@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { Conversation } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
@@ -49,7 +50,14 @@ export default function Sidebar({
 }: SidebarProps) {
   const { isLoggedIn } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
   const grouped = groupByDate(conversations);
+
+  const handleConversationClick = (id: string, type: "chat" | "document", documentId?: string) => {
+    router.push(`/chat/${id}`);
+    onSelectConversation(id, type, documentId);
+  };
 
   return (
     <aside className={`sidebar${collapsed ? " sidebar-collapsed" : ""}`}>
@@ -141,6 +149,40 @@ export default function Sidebar({
       {/* Body — hidden when collapsed */}
       {!collapsed && (
         <div className="sidebar-body">
+          {/* Nav links */}
+          {isLoggedIn && (
+            <div className="sidebar-nav-links">
+              <Link
+                href="/documents"
+                className={`sidebar-nav-link${pathname === "/documents" ? " sidebar-nav-link-active" : ""}`}
+                style={{ display: "flex", alignItems: "center", gap: 8 }}
+              >
+                <span style={{ display: "inline-flex", flexShrink: 0 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                  </svg>
+                </span>
+                <span>Documents</span>
+              </Link>
+              <Link
+                href="/credits"
+                className={`sidebar-nav-link${pathname === "/credits" ? " sidebar-nav-link-active" : ""}`}
+                style={{ display: "flex", alignItems: "center", gap: 8 }}
+              >
+                <span style={{ display: "inline-flex", flexShrink: 0 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23" />
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                  </svg>
+                </span>
+                <span>Credits</span>
+              </Link>
+            </div>
+          )}
+
+          {/* Conversation history */}
+          <div className="sidebar-divider" />
           {!isLoggedIn ? (
             <div className="sidebar-auth-prompt">
               <svg
@@ -179,7 +221,7 @@ export default function Sidebar({
                       key={c._id}
                       className={`sidebar-item ${activeConversationId === c._id ? "sidebar-item-active" : ""}`}
                       onClick={() =>
-                        onSelectConversation(c._id, c.type, c.documentId)
+                        handleConversationClick(c._id, c.type, c.documentId)
                       }
                       title={c.title ?? "Untitled"}
                     >
