@@ -39,10 +39,18 @@ export default function Navbar({ onNewChat }: NavbarProps) {
 
   const initial = user?.name?.charAt(0).toUpperCase() ?? "?";
 
+  const handleLogoClick = () => {
+    if (onNewChat) {
+      onNewChat();
+    } else {
+      router.push("/chat");
+    }
+  };
+
   return (
     <nav className="navbar">
       <div className="navbar-left">
-        <button className="nav-logo" onClick={onNewChat}>
+        <button className="nav-logo" onClick={handleLogoClick}>
           <svg
             width="22"
             height="22"

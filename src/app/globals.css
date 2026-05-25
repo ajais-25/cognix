@@ -553,7 +553,7 @@ html, body {
 .messages-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 24px;
   max-width: 760px;
   margin: 0 auto;
   padding: 0 20px;
@@ -746,7 +746,7 @@ html, body {
 /* ─── Follow-up chips ─────────────────────────────────────────── */
 .followup-chips {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 6px;
   margin-top: 12px;
 }
@@ -756,15 +756,13 @@ html, body {
   color: var(--accent-text);
   background: var(--accent-subtle);
   border: 1px solid transparent;
-  padding: 6px 12px;
-  border-radius: var(--radius-full);
+  padding: 7px 14px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
   text-align: left;
-  white-space: nowrap;
-  max-width: 280px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  line-height: 1.4;
 }
 .followup-chip:hover { background: var(--accent); color: white; }
 
@@ -830,7 +828,7 @@ html, body {
 
 .input-bar {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 8px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -852,10 +850,10 @@ html, body {
   font-size: 14px;
   color: var(--text-primary);
   resize: none;
-  min-height: 24px;
+  min-height: 32px;
   max-height: 140px;
-  line-height: 1.6;
-  padding: 2px 0;
+  line-height: 20px;
+  padding: 6px 0;
 }
 .input-textarea::placeholder { color: var(--text-tertiary); }
 .input-textarea:disabled { opacity: 0.5; cursor: not-allowed; }
