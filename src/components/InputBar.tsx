@@ -11,8 +11,7 @@ import {
 interface InputBarProps {
   onSend: (query: string) => void;
   isLoading: boolean;
-  isPdfPanelOpen: boolean;
-  onTogglePdf: () => void;
+  onUpload?: (file: File) => void;
   initialValue?: string;
   placeholder?: string;
 }
@@ -20,13 +19,27 @@ interface InputBarProps {
 export default function InputBar({
   onSend,
   isLoading,
-  isPdfPanelOpen,
-  onTogglePdf,
+  onUpload,
   initialValue = "",
   placeholder = "Ask anything…",
 }: InputBarProps) {
   const [value, setValue] = useState(initialValue);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFiles = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    if (file.type !== "application/pdf") {
+      alert("Only PDF files are supported.");
+      return;
+    }
+    if (file.size > 20_000_000) {
+      alert("File must be ≤ 20 MB.");
+      return;
+    }
+    onUpload?.(file);
+  };
 
   // When a follow-up chip is clicked, parent updates initialValue
   useEffect(() => {
@@ -66,11 +79,19 @@ export default function InputBar({
   return (
     <div className="input-bar-wrapper">
       <div className={`input-bar ${isLoading ? "input-bar-loading" : ""}`}>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf"
+          hidden
+          onChange={(e) => handleFiles(e.target.files)}
+        />
+
         <button
-          id="pdf-toggle-btn"
-          className={`input-icon-btn ${isPdfPanelOpen ? "input-icon-btn-active" : ""}`}
-          onClick={onTogglePdf}
-          title="Upload / manage PDFs"
+          id="pdf-upload-btn"
+          className="input-icon-btn"
+          onClick={() => fileInputRef.current?.click()}
+          title="Upload PDF"
           type="button"
         >
           <svg

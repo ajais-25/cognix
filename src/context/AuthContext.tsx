@@ -8,6 +8,7 @@ import {
   useCallback,
   ReactNode,
 } from "react";
+import axios from "axios";
 import { AuthUser } from "@/lib/types";
 
 interface AuthContextValue {
@@ -31,25 +32,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUser = useCallback(async () => {
     try {
-      const res = await fetch("/api/credits");
-      if (res.status === 401) {
+      const res = await axios.get("/api/credits");
+      setCreditsState(res.data.data.credits);
+      setLowBalance(res.data.data.lowBalance);
+      // We don't get user info from credits endpoint — try a cheap ping
+      // If the credits endpoint succeeded, the user is authenticated.
+      // We'll store minimal info from sign-in flow.
+      const stored = localStorage.getItem("cognix_user");
+      if (stored) {
+        setUser(JSON.parse(stored));
+      }
+    } catch (err: any) {
+      if (err.response?.status === 401) {
         setUser(null);
         setCreditsState(null);
         return;
       }
-      if (res.ok) {
-        const data = await res.json();
-        setCreditsState(data.data.credits);
-        setLowBalance(data.data.lowBalance);
-        // We don't get user info from credits endpoint — try a cheap ping
-        // If the credits endpoint succeeded, the user is authenticated.
-        // We'll store minimal info from sign-in flow.
-        const stored = localStorage.getItem("cognix_user");
-        if (stored) {
-          setUser(JSON.parse(stored));
-        }
-      }
-    } catch {
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -66,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await fetch("/api/users/logout", { method: "POST" });
+    await axios.post("/api/users/logout");
     localStorage.removeItem("cognix_user");
     setUser(null);
     setCreditsState(null);

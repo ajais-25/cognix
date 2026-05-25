@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import axios from "axios";
 import { UserDocument } from "@/lib/types";
 
 export function useDocuments() {
@@ -13,11 +14,8 @@ export function useDocuments() {
   const fetchDocuments = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/documents");
-      if (res.ok) {
-        const data = await res.json();
-        setDocuments(data.data ?? []);
-      }
+      const res = await axios.get("/api/documents");
+      setDocuments(res.data.data ?? []);
     } catch {
       // silently fail
     } finally {
@@ -47,23 +45,13 @@ export function useDocuments() {
         const formData = new FormData();
         formData.append("file", file);
 
-        const res = await fetch("/api/documents/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          setUploadError(data.message ?? "Upload failed");
-          return;
-        }
+        const res = await axios.post("/api/documents/upload", formData);
 
         setUploadSuccess(true);
         await fetchDocuments();
-        onSuccess?.(data.data);
-      } catch {
-        setUploadError("Network error while uploading.");
+        onSuccess?.(res.data.data);
+      } catch (err: any) {
+        setUploadError(err.response?.data?.message ?? "Network error while uploading.");
       } finally {
         setIsUploading(false);
       }

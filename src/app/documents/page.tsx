@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import { useConversations } from "@/hooks/useConversations";
 import Navbar from "@/components/Navbar";
@@ -55,13 +56,13 @@ export default function DocumentsPage() {
   useEffect(() => {
     if (authLoading) return;
     if (!isLoggedIn) { setIsLoading(false); return; }
-    fetch("/api/documents")
-      .then((r) => r.json())
-      .then((d) => {
+    axios.get("/api/documents")
+      .then((res) => {
+        const d = res.data;
         if (d.success) setDocuments(d.data ?? []);
         else setError(d.message ?? "Failed to load documents");
       })
-      .catch(() => setError("Network error"))
+      .catch((err) => setError(err.response?.data?.message ?? "Network error"))
       .finally(() => setIsLoading(false));
   }, [isLoggedIn, authLoading]);
 

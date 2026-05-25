@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import axios from "axios";
 import { StreamingMessage, ChatMode, SearchResult } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext";
 
@@ -51,28 +52,22 @@ export function useChat(mode: ChatMode) {
             ? `/api/documents/${mode.documentId}/ask`
             : "/api/ask";
 
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, conversationId }),
-          signal: abortRef.current.signal,
-        });
+        const res = await axios.post(
+          url,
+          { query, conversationId },
+          {
+            headers: { "Content-Type": "application/json" },
+            signal: abortRef.current.signal,
+            responseType: "stream",
+            adapter: "fetch",
+          }
+        );
 
-        if (!res.ok || !res.body) {
-          const data = await res.json().catch(() => ({}));
-          const errMsg =
-            data.message ?? "Something went wrong. Please try again.";
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === modelMsgId
-                ? { ...m, content: errMsg, isStreaming: false }
-                : m,
-            ),
-          );
-          return;
+        if (!res.data) {
+          throw new Error("No response body");
         }
 
-        const reader = res.body.getReader();
+        const reader = res.data.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
 
@@ -159,13 +154,33 @@ export function useChat(mode: ChatMode) {
           }
         }
       } catch (err: unknown) {
-        if ((err as Error)?.name === "AbortError") return;
+        if ((err as Error)?.name === "AbortError" || axios.isCancel(err)) return;
+
+        let errMsg = "Connection error. Please try again.";
+        if (axios.isAxiosError(err) && err.response?.data) {
+          try {
+            const stream = err.response.data;
+            const reader = stream.getReader();
+            const decoder = new TextDecoder();
+            let errorString = "";
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              errorString += decoder.decode(value, { stream: true });
+            }
+            const parsed = JSON.parse(errorString);
+            errMsg = parsed.message ?? errMsg;
+          } catch {
+            // fallback
+          }
+        }
+
         setMessages((prev) =>
           prev.map((m) =>
             m.id === modelMsgId
               ? {
                   ...m,
-                  content: "Connection error. Please try again.",
+                  content: errMsg,
                   isStreaming: false,
                 }
               : m,

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import { useConversations } from "@/hooks/useConversations";
 import Navbar from "@/components/Navbar";
@@ -54,10 +55,13 @@ export default function CreditsPage() {
   useEffect(() => {
     if (authLoading) return;
     if (!isLoggedIn) { setIsLoading(false); return; }
-    fetch("/api/credits")
-      .then((r) => r.json())
-      .then((d) => { if (d.success) setData(d.data); else setError(d.message ?? "Failed to load credits"); })
-      .catch(() => setError("Network error"))
+    axios.get("/api/credits")
+      .then((res) => {
+        const d = res.data;
+        if (d.success) setData(d.data);
+        else setError(d.message ?? "Failed to load credits");
+      })
+      .catch((err) => setError(err.response?.data?.message ?? "Network error"))
       .finally(() => setIsLoading(false));
   }, [isLoggedIn, authLoading]);
 

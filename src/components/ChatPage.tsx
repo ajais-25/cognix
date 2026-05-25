@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ChatMode, StreamingMessage, SearchResult } from "@/lib/types";
 import { useChat } from "@/hooks/useChat";
 import { useDocuments } from "@/hooks/useDocuments";
@@ -12,16 +12,16 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import ChatArea from "@/components/ChatArea";
 import InputBar from "@/components/InputBar";
-import PdfPanel from "@/components/PdfPanel";
 
 export default function ChatPage() {
   const { isLoggedIn, setCredits } = useAuth();
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const docId = searchParams?.get("doc");
   const urlConversationId = params?.conversationId as string | undefined;
 
   const [mode, setMode] = useState<ChatMode>({ type: "chat" });
-  const [isPdfOpen, setIsPdfOpen] = useState(false);
   const [followUpInput, setFollowUpInput] = useState("");
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
@@ -124,10 +124,32 @@ export default function ChatPage() {
     (file: File) => {
       uploadDocument(file, (result) => {
         setCredits(result.creditsRemaining, result.lowBalance);
+        setMode({
+          type: "document",
+          documentId: result.documentId,
+          documentName: result.fileName,
+        });
+        resetChat();
+        setActiveConversationId(null);
       });
     },
-    [uploadDocument, setCredits],
+    [uploadDocument, setCredits, resetChat],
   );
+
+  useEffect(() => {
+    if (docId && documents.length > 0) {
+      const doc = documents.find((d) => d._id === docId);
+      if (doc && doc.status === "ready") {
+        setMode({
+          type: "document",
+          documentId: doc._id,
+          documentName: doc.fileName,
+        });
+        resetChat();
+        setActiveConversationId(null);
+      }
+    }
+  }, [docId, documents, resetChat]);
 
   const handleSelectDocument = useCallback((doc: UserDocument) => {
     setMode({
@@ -162,6 +184,52 @@ export default function ChatPage() {
         />
 
         <main className="chat-main">
+          {isUploading && (
+            <div className="upload-status-banner">
+              <svg
+                className="spin"
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+              </svg>
+              <span>Uploading and processing document…</span>
+            </div>
+          )}
+
+          {uploadError && (
+            <div className="upload-status-banner upload-status-error">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span>{uploadError}</span>
+              <button
+                className="clear-upload-error-btn"
+                onClick={clearUploadState}
+                title="Dismiss"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           <ChatArea
             messages={messages}
             isLoading={isLoading}
@@ -201,30 +269,12 @@ export default function ChatPage() {
             <InputBar
               onSend={handleSend}
               isLoading={isLoading}
-              isPdfPanelOpen={isPdfOpen}
-              onTogglePdf={() => setIsPdfOpen((p) => !p)}
+              onUpload={handleUpload}
               initialValue={followUpInput}
               placeholder={docModePlaceholder}
             />
           </div>
         </main>
-
-        {isPdfOpen && (
-          <PdfPanel
-            documents={documents}
-            isLoading={docsLoading}
-            isUploading={isUploading}
-            uploadError={uploadError}
-            uploadSuccess={uploadSuccess}
-            activeMode={mode}
-            onUpload={handleUpload}
-            onSelectDocument={handleSelectDocument}
-            onClearMode={() => {
-              setMode({ type: "chat" });
-              resetChat();
-            }}
-          />
-        )}
       </div>
     </div>
   );

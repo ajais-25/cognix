@@ -902,6 +902,73 @@ html, body {
   text-align: center;
   margin-top: 6px;
 }
+/* ─── Upload Status Banner ────────────────────────────────────── */
+.upload-status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--accent-subtle);
+  border-bottom: 1px solid var(--border);
+  color: var(--accent-text);
+  font-size: 13px;
+  font-weight: 500;
+  animation: slide-down 0.2s ease-out;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.upload-status-banner svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.upload-status-error {
+  background: var(--red-bg) !important;
+  color: var(--red) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--red) 15%, transparent);
+}
+
+.upload-status-error svg {
+  color: var(--red) !important;
+}
+
+.clear-upload-error-btn {
+  margin-left: 12px;
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.7;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  transition: opacity 0.15s, background-color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-upload-error-btn:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .clear-upload-error-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+@keyframes slide-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
 
 /* ─── PDF panel ───────────────────────────────────────────────── */
 .pdf-panel {
