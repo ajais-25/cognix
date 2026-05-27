@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ChatMode, StreamingMessage, SearchResult } from "@/lib/types";
 import { useChat } from "@/hooks/useChat";
@@ -26,6 +26,8 @@ export default function ChatPage() {
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
   >(null);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const chatAreaRef = useRef<HTMLDivElement>(null);
 
   const {
     messages,
@@ -165,6 +167,36 @@ export default function ChatPage() {
     setFollowUpInput(q);
   }, []);
 
+  const handleScroll = useCallback(() => {
+    const el = chatAreaRef.current;
+    if (!el) return;
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setShowScrollBtn(distFromBottom > 120);
+  }, []);
+
+  useEffect(() => {
+    const el = chatAreaRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [handleScroll]);
+
+  // Auto-hide button when new messages arrive and we auto-scroll to bottom
+  useEffect(() => {
+    const el = chatAreaRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      setShowScrollBtn(distFromBottom > 120);
+    });
+  }, [messages]);
+
+  const scrollToBottom = useCallback(() => {
+    const el = chatAreaRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, []);
+
   const docModePlaceholder =
     mode.type === "document"
       ? `Ask about ${mode.documentName}…`
@@ -235,9 +267,29 @@ export default function ChatPage() {
             isLoading={isLoading}
             mode={mode}
             onFollowUp={handleFollowUp}
+            scrollRef={chatAreaRef}
           />
 
           <div className="input-section">
+            <button
+              className={`scroll-to-bottom-btn${showScrollBtn ? " visible" : ""}`}
+              onClick={scrollToBottom}
+              aria-label="Scroll to bottom"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <polyline points="19 12 12 19 5 12" />
+              </svg>
+            </button>
             {mode.type === "document" && (
               <div className="doc-mode-banner">
                 <svg

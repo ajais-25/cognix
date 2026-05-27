@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, RefObject } from "react";
 import { StreamingMessage, ChatMode } from "@/lib/types";
 import MessageBubble from "./MessageBubble";
 
@@ -9,6 +9,7 @@ interface ChatAreaProps {
   isLoading: boolean;
   mode: ChatMode;
   onFollowUp: (q: string) => void;
+  scrollRef?: RefObject<HTMLDivElement | null>;
 }
 
 const EXAMPLE_PROMPTS = [
@@ -23,6 +24,7 @@ export default function ChatArea({
   isLoading,
   mode,
   onFollowUp,
+  scrollRef,
 }: ChatAreaProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -33,7 +35,7 @@ export default function ChatArea({
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="chat-area">
+    <div className="chat-area" ref={scrollRef}>
       {isEmpty ? (
         <div className="chat-empty">
           <div className="chat-empty-icon">
