@@ -7,6 +7,7 @@ import MessageBubble from "./MessageBubble";
 interface ChatAreaProps {
   messages: StreamingMessage[];
   isLoading: boolean;
+  isHistoryLoading?: boolean;
   mode: ChatMode;
   onFollowUp: (q: string) => void;
   scrollRef?: RefObject<HTMLDivElement | null>;
@@ -22,6 +23,7 @@ const EXAMPLE_PROMPTS = [
 export default function ChatArea({
   messages,
   isLoading,
+  isHistoryLoading,
   mode,
   onFollowUp,
   scrollRef,
@@ -36,7 +38,133 @@ export default function ChatArea({
 
   return (
     <div className="chat-area" ref={scrollRef}>
-      {isEmpty ? (
+      {isHistoryLoading ? (
+        <div className="messages-list">
+          {/* Skeleton message 1: User */}
+          <div className="message-row message-row-user">
+            <div
+              className="message-bubble message-bubble-user"
+              style={{
+                opacity: 0.4,
+                width: "40%",
+                height: "38px",
+                borderRadius: "16px 16px 4px 16px",
+                background: "var(--bg-subtle)",
+                animation: "shimmer 1.4s infinite",
+              }}
+            />
+          </div>
+          {/* Skeleton message 2: Model */}
+          <div className="message-row message-row-model">
+            <div className="message-avatar">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <div className="message-bubble message-bubble-model" style={{ width: "100%" }}>
+              <div
+                className="message-skeleton-line"
+                style={{
+                  width: "90%",
+                  height: "16px",
+                  background: "var(--bg-subtle)",
+                  borderRadius: "4px",
+                  marginBottom: "8px",
+                  animation: "shimmer 1.4s infinite",
+                }}
+              />
+              <div
+                className="message-skeleton-line"
+                style={{
+                  width: "75%",
+                  height: "16px",
+                  background: "var(--bg-subtle)",
+                  borderRadius: "4px",
+                  marginBottom: "8px",
+                  animation: "shimmer 1.4s infinite",
+                }}
+              />
+              <div
+                className="message-skeleton-line"
+                style={{
+                  width: "50%",
+                  height: "16px",
+                  background: "var(--bg-subtle)",
+                  borderRadius: "4px",
+                  animation: "shimmer 1.4s infinite",
+                }}
+              />
+            </div>
+          </div>
+          {/* Skeleton message 3: User */}
+          <div className="message-row message-row-user">
+            <div
+              className="message-bubble message-bubble-user"
+              style={{
+                opacity: 0.4,
+                width: "25%",
+                height: "38px",
+                borderRadius: "16px 16px 4px 16px",
+                background: "var(--bg-subtle)",
+                animation: "shimmer 1.4s infinite",
+              }}
+            />
+          </div>
+          {/* Skeleton message 4: Model */}
+          <div className="message-row message-row-model">
+            <div className="message-avatar">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <div className="message-bubble message-bubble-model" style={{ width: "100%" }}>
+              <div
+                className="message-skeleton-line"
+                style={{
+                  width: "80%",
+                  height: "16px",
+                  background: "var(--bg-subtle)",
+                  borderRadius: "4px",
+                  marginBottom: "8px",
+                  animation: "shimmer 1.4s infinite",
+                }}
+              />
+              <div
+                className="message-skeleton-line"
+                style={{
+                  width: "60%",
+                  height: "16px",
+                  background: "var(--bg-subtle)",
+                  borderRadius: "4px",
+                  animation: "shimmer 1.4s infinite",
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : isEmpty ? (
         <div className="chat-empty">
           <div className="chat-empty-icon">
             <svg

@@ -19,13 +19,17 @@ export default function ChatPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const docId = searchParams?.get("doc");
-  const urlConversationId = params?.conversationId as string | undefined;
+  const rawConversationId = params?.conversationId;
+  const urlConversationId = Array.isArray(rawConversationId)
+    ? rawConversationId[0]
+    : (rawConversationId as string | undefined);
 
   const [mode, setMode] = useState<ChatMode>({ type: "chat" });
   const [followUpInput, setFollowUpInput] = useState("");
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
   >(null);
+  const isHistoryLoading = !!(urlConversationId && activeConversationId !== urlConversationId);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const chatAreaRef = useRef<HTMLDivElement>(null);
 
@@ -62,7 +66,10 @@ export default function ChatPage() {
   const handleSelectConversation = useCallback(
     async (id: string, type?: "chat" | "document", documentId?: string) => {
       const data = await loadConversation(id);
-      if (!data) return;
+      if (!data) {
+        router.push("/chat");
+        return;
+      }
 
       setActiveConversationId(id);
       setConversationId(id);
@@ -265,6 +272,7 @@ export default function ChatPage() {
           <ChatArea
             messages={messages}
             isLoading={isLoading}
+            isHistoryLoading={isHistoryLoading}
             mode={mode}
             onFollowUp={handleFollowUp}
             scrollRef={chatAreaRef}
