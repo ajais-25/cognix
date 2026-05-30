@@ -655,10 +655,10 @@ nav.navbar .navbar-right {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
+  background: transparent;
+  border: none;
   border-radius: var(--radius-lg);
-  color: var(--accent);
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
@@ -709,9 +709,9 @@ nav.navbar .navbar-right {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  max-width: 760px;
+  max-width: 720px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 40px;
   width: 100%;
 }
 
@@ -1109,8 +1109,8 @@ nav.navbar .navbar-right {
 
 /* ─── Input section ───────────────────────────────────────────── */
 .input-section {
-  padding: 0 20px 16px;
-  max-width: 760px;
+  padding: 0 40px 16px;
+  max-width: 820px;
   margin: 0 auto;
   width: 100%;
   flex-shrink: 0;
@@ -1192,7 +1192,7 @@ nav.navbar .navbar-right {
 
 .input-bar {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 8px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -1204,7 +1204,7 @@ nav.navbar .navbar-right {
 }
 
 /* Seamless merge when input-bar is in doc mode */
-.doc-mode-banner + .input-bar-wrapper .input-bar,
+.doc-mode-banner+.input-bar-wrapper .input-bar,
 .input-bar.input-bar-doc-mode {
   border-top-left-radius: 0;
   border-top-right-radius: 0;

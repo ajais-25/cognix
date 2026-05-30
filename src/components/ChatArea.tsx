@@ -56,22 +56,6 @@ export default function ChatArea({
           </div>
           {/* Skeleton message 2: Model */}
           <div className="message-row message-row-model">
-            <div className="message-avatar">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-                <path d="M2 12l10 5 10-5" />
-              </svg>
-            </div>
             <div className="message-bubble message-bubble-model" style={{ width: "100%" }}>
               <div
                 className="message-skeleton-line"
@@ -123,22 +107,6 @@ export default function ChatArea({
           </div>
           {/* Skeleton message 4: Model */}
           <div className="message-row message-row-model">
-            <div className="message-avatar">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-                <path d="M2 12l10 5 10-5" />
-              </svg>
-            </div>
             <div className="message-bubble message-bubble-model" style={{ width: "100%" }}>
               <div
                 className="message-skeleton-line"
@@ -224,22 +192,6 @@ export default function ChatArea({
           ))}
           {isLoading && messages[messages.length - 1]?.role === "user" && (
             <div className="message-row message-row-model">
-              <div className="message-avatar">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                  <path d="M2 17l10 5 10-5" />
-                  <path d="M2 12l10 5 10-5" />
-                </svg>
-              </div>
               <div className="message-bubble message-bubble-model">
                 <div className="thinking-dots">
                   <span /><span /><span />

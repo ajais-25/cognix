@@ -46,7 +46,15 @@ export default function InputBar({
   // When a follow-up chip is clicked, parent updates initialValue
   useEffect(() => {
     setValue(initialValue);
-    textareaRef.current?.focus();
+    // Set value directly on the DOM element and resize immediately,
+    // since React may not have flushed the state update yet
+    const el = textareaRef.current;
+    if (el) {
+      el.value = initialValue;
+      el.style.height = "auto";
+      el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+      el.focus();
+    }
   }, [initialValue]);
 
   const autoResize = () => {

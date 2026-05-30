@@ -124,25 +124,6 @@ export default function MessageBubble({
 
   return (
     <div className={`message-row ${isUser ? "message-row-user" : "message-row-model"}`}>
-      {!isUser && (
-        <div className={`message-avatar ${isError ? "message-avatar-error" : ""}`}>
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 2L2 7l10 5 10-5-10-5z" />
-            <path d="M2 17l10 5 10-5" />
-            <path d="M2 12l10 5 10-5" />
-          </svg>
-        </div>
-      )}
-
       <div className={`message-bubble ${isUser ? "message-bubble-user" : isError ? "message-bubble-error" : "message-bubble-model"}`}>
         {isUser ? (
           <p className="message-user-text">{message.content}</p>
