@@ -5,6 +5,7 @@ import { useCallback } from "react";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { useConversations } from "@/hooks/useConversations";
+import { useSidebar } from "@/context/SidebarContext";
 
 export default function DashboardLayout({
   children,
@@ -13,6 +14,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
+  const { mobileOpen, closeMobile } = useSidebar();
 
   const { conversations, isLoading: convsLoading } = useConversations();
 
@@ -30,13 +32,21 @@ export default function DashboardLayout({
 
   const handleNewChat = useCallback(() => {
     router.push("/chat");
-  }, [router]);
+    closeMobile();
+  }, [router, closeMobile]);
 
   return (
     <div className="app-shell">
       <Navbar onNewChat={handleNewChat} />
 
       <div className="main-layout">
+        {/* Mobile backdrop — click to close sidebar */}
+        <div
+          className={`sidebar-backdrop${mobileOpen ? " sidebar-backdrop-visible" : ""}`}
+          onClick={closeMobile}
+          aria-hidden="true"
+        />
+
         <Sidebar
           conversations={conversations}
           isLoading={convsLoading}

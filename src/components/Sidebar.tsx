@@ -49,7 +49,7 @@ export default function Sidebar({
   onNewChat,
 }: SidebarProps) {
   const { isLoggedIn } = useAuth();
-  const { collapsed, toggleSidebar } = useSidebar();
+  const { collapsed, toggleSidebar, mobileOpen, closeMobile } = useSidebar();
   const pathname = usePathname();
   const router = useRouter();
   const grouped = groupByDate(conversations);
@@ -57,17 +57,18 @@ export default function Sidebar({
   const handleConversationClick = (id: string, type: "chat" | "document", documentId?: string) => {
     router.push(`/chat/${id}`);
     onSelectConversation(id, type, documentId);
+    closeMobile(); // Close sidebar on mobile after selecting a conversation
   };
 
   return (
-    <aside className={`sidebar${collapsed ? " sidebar-collapsed" : ""}`} suppressHydrationWarning>
+    <aside className={`sidebar${(collapsed && !mobileOpen) ? " sidebar-collapsed" : ""}${mobileOpen ? " sidebar-mobile-open" : ""}`} suppressHydrationWarning>
       {/* Header: toggle only */}
       <div className="sidebar-header">
         <button
           className="sidebar-toggle-btn"
-          onClick={toggleSidebar}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          onClick={mobileOpen ? closeMobile : toggleSidebar}
+          aria-label={mobileOpen ? "Close sidebar" : collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={mobileOpen ? "Close sidebar" : collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           <svg
             width="16"
@@ -85,8 +86,8 @@ export default function Sidebar({
           </svg>
         </button>
 
-        {!collapsed && (
-          <button className="new-chat-btn" onClick={onNewChat}>
+        {(!collapsed || mobileOpen) && (
+          <button className="new-chat-btn" onClick={() => { onNewChat(); closeMobile(); }}>
             <svg
               width="14"
               height="14"
@@ -105,8 +106,8 @@ export default function Sidebar({
         )}
       </div>
 
-      {/* Collapsed icon strip — always visible when collapsed */}
-      {collapsed && (
+      {/* Collapsed icon strip — visible when collapsed, but NOT on mobile overlay */}
+      {collapsed && !mobileOpen && (
         <div className="sidebar-collapsed-icons">
           <button
             className="sidebar-icon-btn"
@@ -175,8 +176,8 @@ export default function Sidebar({
         </div>
       )}
 
-      {/* Body — hidden when collapsed */}
-      {!collapsed && (
+      {/* Body — hidden when collapsed (but shown on mobile overlay) */}
+      {(!collapsed || mobileOpen) && (
         <div className="sidebar-body">
           {/* Nav links */}
           {isLoggedIn && (
@@ -185,6 +186,7 @@ export default function Sidebar({
                 href="/documents"
                 className={`sidebar-nav-link${pathname === "/documents" ? " sidebar-nav-link-active" : ""}`}
                 style={{ display: "flex", alignItems: "center", gap: 8 }}
+                onClick={closeMobile}
               >
                 <span style={{ display: "inline-flex", flexShrink: 0 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -198,6 +200,7 @@ export default function Sidebar({
                 href="/credits"
                 className={`sidebar-nav-link${pathname === "/credits" ? " sidebar-nav-link-active" : ""}`}
                 style={{ display: "flex", alignItems: "center", gap: 8 }}
+                onClick={closeMobile}
               >
                 <span style={{ display: "inline-flex", flexShrink: 0 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

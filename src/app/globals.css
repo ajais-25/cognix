@@ -646,7 +646,7 @@ nav.navbar .navbar-right {
   height: 100%;
   gap: 12px;
   text-align: center;
-  padding: 0 24px;
+  padding: 0 20px 0 28px;
 }
 
 .chat-empty-icon {
@@ -711,7 +711,7 @@ nav.navbar .navbar-right {
   gap: 24px;
   max-width: 720px;
   margin: 0 auto;
-  padding: 0 40px;
+  padding: 0 36px 0 44px;
   width: 100%;
 }
 
@@ -2444,4 +2444,383 @@ nav.navbar .navbar-right {
   color: var(--red) !important;
   background: var(--red-bg) !important;
   border-color: color-mix(in srgb, var(--red) 30%, transparent) !important;
+}
+
+/* ─── Mobile sidebar overlay backdrop ─────────────────────────── */
+.sidebar-backdrop {
+  display: none;
+}
+
+/* ─── Mobile hamburger button (shown in navbar on small screens) ─ */
+.mobile-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.mobile-menu-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* ─── Responsive: ≤ 768px ─────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* --- Navbar mobile --- */
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  nav.navbar {
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  nav.navbar .navbar-left {
+    gap: 6px;
+  }
+
+  nav.navbar .navbar-right {
+    gap: 8px;
+  }
+
+  /* Keep the credit warning always visible on mobile — never hide it */
+  .credit-warning {
+    font-size: 11px;
+    padding: 2px 6px;
+    flex-shrink: 0;
+    order: -1;
+    /* Pull it to the front of navbar-right so it's always seen */
+  }
+
+  .credit-badge {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+
+  .nav-divider {
+    height: 14px;
+    margin: 0;
+  }
+
+  .nav-logo span {
+    display: none;
+    /* Hide "Cognix" text, keep icon */
+  }
+
+  /* --- Sidebar mobile overlay --- */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1000;
+    width: 280px;
+    max-width: 85vw;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: none;
+    border-right: 1px solid var(--border);
+  }
+
+  .sidebar.sidebar-mobile-open {
+    transform: translateX(0);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.18);
+  }
+
+  /* Override collapsed state on mobile — always show full sidebar when open */
+  .sidebar.sidebar-collapsed {
+    width: 280px;
+    max-width: 85vw;
+  }
+
+  .sidebar.sidebar-collapsed.sidebar-mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Mobile Sidebar Header Alignment & Padding */
+  .sidebar .sidebar-header {
+    padding: 14px 16px;
+    gap: 10px;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  .sidebar.sidebar-collapsed .sidebar-header {
+    padding: 14px 16px;
+    justify-content: flex-start;
+  }
+
+  .sidebar .sidebar-toggle-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sidebar .new-chat-btn {
+    padding: 8px 12px;
+    font-size: 13.5px;
+    height: 36px;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Backdrop */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    transition: opacity 0.28s ease;
+  }
+
+  .sidebar-backdrop.sidebar-backdrop-visible {
+    display: block;
+    opacity: 1;
+  }
+
+  /* --- Input & messages padding --- */
+  .input-section {
+    padding: 0 16px 12px;
+  }
+
+  .messages-list {
+    padding: 0 25px 0 31px;
+  }
+
+  .chat-empty {
+    padding: 0 25px 0 31px;
+  }
+
+  .example-prompts {
+    max-width: 100%;
+  }
+
+  .example-prompt {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+
+  /* --- Subpage padding --- */
+  .subpage-header {
+    padding: 20px 16px 16px;
+  }
+
+  .subpage-inner-header {
+    padding: 18px 16px 14px;
+  }
+
+  .subpage-content {
+    padding: 20px 16px;
+  }
+
+  .subpage-body {
+    padding: 20px 16px;
+  }
+
+  /* --- Document grid & cards responsive layout --- */
+  .docs-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+
+  .doc-card {
+    padding: 16px;
+    min-height: auto;
+  }
+
+  .doc-card-icon-wrapper {
+    width: 32px;
+    height: 32px;
+  }
+
+  .doc-card-name {
+    font-size: 14px;
+  }
+
+  .doc-card-meta {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    margin-bottom: 14px;
+  }
+
+  .doc-card-chat-btn {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .doc-card-processing-status,
+  .doc-card-failed-status {
+    padding: 9px;
+    font-size: 12px;
+  }
+
+  .subpage-title {
+    font-size: 20px;
+  }
+
+  .subpage-empty {
+    padding: 40px 16px;
+  }
+
+  .subpage-signin-btn {
+    padding: 10px 22px;
+    font-size: 13.5px;
+  }
+
+  /* --- Credits page responsive styles --- */
+  .credit-balance-card {
+    padding: 18px 20px;
+    margin-bottom: 20px;
+  }
+
+  .credit-balance-amount {
+    font-size: 32px;
+  }
+
+  .credit-balance-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .txn-row {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+
+  .txn-desc {
+    font-size: 12.5px;
+    white-space: normal;
+    /* Allow descriptions to wrap cleanly on tablet */
+  }
+
+  .txn-token-detail {
+    display: block;
+    margin-left: 0;
+    margin-top: 2px;
+  }
+}
+
+/* ─── Very small screens (≤ 480px) ────────────────────────────── */
+@media (max-width: 480px) {
+  .credit-warning {
+    font-size: 10px;
+    padding: 1px 5px;
+  }
+
+  .credit-badge {
+    font-size: 10px;
+    padding: 1px 5px;
+  }
+
+  .nav-avatar {
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
+  }
+
+  .chat-empty-title {
+    font-size: 17px;
+  }
+
+  .chat-empty-sub {
+    font-size: 13px;
+  }
+
+  .input-textarea {
+    font-size: 13px;
+  }
+
+  /* Stack transactions on small phones to prevent horizontal squishing */
+  .txn-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .txn-left {
+    width: 100%;
+  }
+
+  .txn-right {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+    margin-top: 2px;
+  }
+
+  /* --- Auth pages responsive refinements --- */
+  .auth-page {
+    padding: 0;
+    background: var(--bg-surface);
+    /* Flat modern screen layout */
+    align-items: stretch;
+    /* Stretch card to take up full width */
+  }
+
+  .auth-card {
+    max-width: 100%;
+    min-height: 100vh;
+    border: none;
+    border-radius: 0;
+    padding: 40px 24px;
+    justify-content: center;
+    box-shadow: none;
+  }
+
+  .auth-title {
+    font-size: 24px;
+    /* More readable header on mobile */
+  }
+
+  .auth-form {
+    gap: 20px;
+    /* Comfortable mobile form field vertical gap */
+  }
+
+  .form-input {
+    padding: 12px 14px;
+    /* Large, touchscreen-friendly inputs */
+    font-size: 15px;
+  }
+
+  .auth-submit-btn {
+    padding: 12px;
+    /* Touch-friendly button size */
+    font-size: 15px;
+  }
+
+  /* Compact OTP row for small phone widths to prevent overflow */
+  .otp-row {
+    gap: 6px;
+  }
+
+  .otp-input {
+    width: 38px;
+    height: 46px;
+    font-size: 18px;
+  }
 }
