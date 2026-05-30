@@ -306,15 +306,18 @@ export default function ChatPage() {
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
                 Chatting with <strong>{mode.documentName}</strong>
-                <button
-                  className="exit-doc-btn"
-                  onClick={() => {
-                    setMode({ type: "chat" });
-                    resetChat();
-                  }}
-                >
-                  ✕
-                </button>
+                {!activeConversationId && (
+                  <button
+                    className="exit-doc-btn"
+                    onClick={() => {
+                      setMode({ type: "chat" });
+                      resetChat();
+                      router.push("/chat");
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
             )}
 
@@ -324,6 +327,7 @@ export default function ChatPage() {
               onUpload={handleUpload}
               initialValue={followUpInput}
               placeholder={docModePlaceholder}
+              isDocMode={mode.type === "document"}
             />
           </div>
         </main>

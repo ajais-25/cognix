@@ -14,6 +14,7 @@ interface InputBarProps {
   onUpload?: (file: File) => void;
   initialValue?: string;
   placeholder?: string;
+  isDocMode?: boolean;
 }
 
 export default function InputBar({
@@ -22,6 +23,7 @@ export default function InputBar({
   onUpload,
   initialValue = "",
   placeholder = "Ask anything…",
+  isDocMode = false,
 }: InputBarProps) {
   const [value, setValue] = useState(initialValue);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -78,7 +80,7 @@ export default function InputBar({
 
   return (
     <div className="input-bar-wrapper">
-      <div className={`input-bar ${isLoading ? "input-bar-loading" : ""}`}>
+      <div className={`input-bar ${isLoading ? "input-bar-loading" : ""} ${isDocMode ? "input-bar-doc-mode" : ""}`}>
         <input
           ref={fileInputRef}
           type="file"
