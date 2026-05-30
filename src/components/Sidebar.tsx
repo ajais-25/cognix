@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Conversation } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext";
-import { useState } from "react";
+import { useSidebar } from "@/context/SidebarContext";
 
 interface SidebarProps {
   conversations: Conversation[];
@@ -49,7 +49,7 @@ export default function Sidebar({
   onNewChat,
 }: SidebarProps) {
   const { isLoggedIn } = useAuth();
-  const [collapsed, setCollapsed] = useState(false);
+  const { collapsed, toggleSidebar } = useSidebar();
   const pathname = usePathname();
   const router = useRouter();
   const grouped = groupByDate(conversations);
@@ -60,47 +60,29 @@ export default function Sidebar({
   };
 
   return (
-    <aside className={`sidebar${collapsed ? " sidebar-collapsed" : ""}`}>
-      {/* Header: toggle + new chat */}
+    <aside className={`sidebar${collapsed ? " sidebar-collapsed" : ""}`} suppressHydrationWarning>
+      {/* Header: toggle only */}
       <div className="sidebar-header">
         <button
           className="sidebar-toggle-btn"
-          onClick={() => setCollapsed((c) => !c)}
+          onClick={toggleSidebar}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {/* Hamburger / arrow icon */}
-          {collapsed ? (
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          ) : (
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          )}
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
         </button>
 
         {!collapsed && (
@@ -121,12 +103,14 @@ export default function Sidebar({
             New chat
           </button>
         )}
+      </div>
 
-        {collapsed && (
+      {/* Collapsed icon strip — always visible when collapsed */}
+      {collapsed && (
+        <div className="sidebar-collapsed-icons">
           <button
-            className="sidebar-toggle-btn"
+            className="sidebar-icon-btn"
             onClick={onNewChat}
-            title="New chat"
             aria-label="New chat"
           >
             <svg
@@ -142,9 +126,54 @@ export default function Sidebar({
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
+            <span className="sidebar-icon-tooltip">New chat</span>
           </button>
-        )}
-      </div>
+          {isLoggedIn && (
+            <>
+              <Link
+                href="/documents"
+                className={`sidebar-icon-btn${pathname === "/documents" ? " sidebar-icon-btn-active" : ""}`}
+                aria-label="Documents"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+                <span className="sidebar-icon-tooltip">Documents</span>
+              </Link>
+              <Link
+                href="/credits"
+                className={`sidebar-icon-btn${pathname === "/credits" ? " sidebar-icon-btn-active" : ""}`}
+                aria-label="Credits"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="12" y1="1" x2="12" y2="23" />
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+                <span className="sidebar-icon-tooltip">Credits</span>
+              </Link>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Body — hidden when collapsed */}
       {!collapsed && (
