@@ -1255,7 +1255,14 @@ nav.navbar .navbar-right {
   transition: color 0.15s, background 0.15s;
 }
 
-.input-icon-btn:hover {
+.input-icon-btn:disabled {
+  opacity: 0.3;
+  color: var(--text-tertiary) !important;
+  background: transparent !important;
+  cursor: not-allowed;
+}
+
+.input-icon-btn:hover:not(:disabled) {
   color: var(--accent);
   background: var(--accent-subtle);
 }
@@ -1263,6 +1270,49 @@ nav.navbar .navbar-right {
 .input-icon-btn-active {
   color: var(--accent) !important;
   background: var(--accent-subtle) !important;
+}
+
+/* Custom premium top-aligned tooltip */
+.ui-tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.ui-tooltip-text {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: var(--text-primary);
+  color: var(--bg-surface);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.ui-tooltip-text::before {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 4px;
+  border-style: solid;
+  border-color: var(--text-primary) transparent transparent transparent;
+}
+
+.ui-tooltip:hover .ui-tooltip-text {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
 .send-btn {

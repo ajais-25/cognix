@@ -8,13 +8,11 @@ import { useDocuments } from "@/hooks/useDocuments";
 import { useConversations } from "@/hooks/useConversations";
 import { useAuth } from "@/context/AuthContext";
 import { UserDocument } from "@/lib/types";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
 import ChatArea from "@/components/ChatArea";
 import InputBar from "@/components/InputBar";
 
 export default function ChatPage() {
-  const { isLoggedIn, setCredits } = useAuth();
+  const { isLoggedIn, isLoading: authLoading, setCredits } = useAuth();
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -120,6 +118,28 @@ export default function ChatPage() {
     clearUploadState,
   ]);
 
+  const prevDocIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (prevDocIdRef.current && !docId && !urlConversationId) {
+      resetChat();
+      setMode({ type: "chat" });
+      setActiveConversationId(null);
+      clearUploadState();
+    }
+    prevDocIdRef.current = docId || null;
+  }, [docId, urlConversationId, resetChat, clearUploadState]);
+
+  // Reactive sign-out reset: clear chat, reset mode, and clear upload states when signing out.
+  useEffect(() => {
+    if (!authLoading && !isLoggedIn) {
+      resetChat();
+      setMode({ type: "chat" });
+      setActiveConversationId(null);
+      clearUploadState();
+    }
+  }, [isLoggedIn, authLoading, resetChat, clearUploadState]);
+
   const handleSend = useCallback(
     async (query: string) => {
       setFollowUpInput("");
@@ -210,136 +230,122 @@ export default function ChatPage() {
       : "Ask anything…";
 
   return (
-    <div className="app-shell">
-      <Navbar onNewChat={handleNewChat} />
+    <main className="chat-main">
+      {isUploading && (
+        <div className="upload-status-banner">
+          <svg
+            className="spin"
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+          </svg>
+          <span>Uploading and processing document…</span>
+        </div>
+      )}
 
-      <div className="main-layout">
-        <Sidebar
-          conversations={conversations}
-          isLoading={false}
-          activeConversationId={activeConversationId}
-          onSelectConversation={handleSelectConversation}
-          onNewChat={handleNewChat}
-        />
+      {uploadError && (
+        <div className="upload-status-banner upload-status-error">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>{uploadError}</span>
+          <button
+            className="clear-upload-error-btn"
+            onClick={clearUploadState}
+            title="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
-        <main className="chat-main">
-          {isUploading && (
-            <div className="upload-status-banner">
-              <svg
-                className="spin"
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-              </svg>
-              <span>Uploading and processing document…</span>
-            </div>
-          )}
+      <ChatArea
+        messages={messages}
+        isLoading={isLoading}
+        isHistoryLoading={isHistoryLoading}
+        mode={mode}
+        onFollowUp={handleFollowUp}
+        scrollRef={chatAreaRef}
+      />
 
-          {uploadError && (
-            <div className="upload-status-banner upload-status-error">
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-              <span>{uploadError}</span>
+      <div className="input-section">
+        <button
+          className={`scroll-to-bottom-btn${showScrollBtn ? " visible" : ""}`}
+          onClick={scrollToBottom}
+          aria-label="Scroll to bottom"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <polyline points="19 12 12 19 5 12" />
+          </svg>
+        </button>
+        {mode.type === "document" && (
+          <div className="doc-mode-banner">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+            Chatting with <strong>{mode.documentName}</strong>
+            {!activeConversationId && (
               <button
-                className="clear-upload-error-btn"
-                onClick={clearUploadState}
-                title="Dismiss"
+                className="exit-doc-btn"
+                onClick={() => {
+                  setMode({ type: "chat" });
+                  resetChat();
+                  router.push("/chat");
+                }}
               >
                 ✕
               </button>
-            </div>
-          )}
-
-          <ChatArea
-            messages={messages}
-            isLoading={isLoading}
-            isHistoryLoading={isHistoryLoading}
-            mode={mode}
-            onFollowUp={handleFollowUp}
-            scrollRef={chatAreaRef}
-          />
-
-          <div className="input-section">
-            <button
-              className={`scroll-to-bottom-btn${showScrollBtn ? " visible" : ""}`}
-              onClick={scrollToBottom}
-              aria-label="Scroll to bottom"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <polyline points="19 12 12 19 5 12" />
-              </svg>
-            </button>
-            {mode.type === "document" && (
-              <div className="doc-mode-banner">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                </svg>
-                Chatting with <strong>{mode.documentName}</strong>
-                {!activeConversationId && (
-                  <button
-                    className="exit-doc-btn"
-                    onClick={() => {
-                      setMode({ type: "chat" });
-                      resetChat();
-                      router.push("/chat");
-                    }}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
             )}
-
-            <InputBar
-              onSend={handleSend}
-              isLoading={isLoading}
-              onUpload={handleUpload}
-              initialValue={followUpInput}
-              placeholder={docModePlaceholder}
-              isDocMode={mode.type === "document"}
-            />
           </div>
-        </main>
+        )}
+
+        <InputBar
+          onSend={handleSend}
+          isLoading={isLoading}
+          onUpload={handleUpload}
+          initialValue={followUpInput}
+          placeholder={docModePlaceholder}
+          isDocMode={mode.type === "document"}
+        />
       </div>
-    </div>
+    </main>
   );
 }

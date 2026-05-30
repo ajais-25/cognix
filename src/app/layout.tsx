@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { SidebarProvider } from "@/context/SidebarContext";
+import { ChatDataProvider } from "@/context/ChatDataContext";
 import Script from "next/script";
 
 const geistSans = Geist({
@@ -45,10 +46,13 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           <SidebarProvider>
-            {children}
+            <ChatDataProvider>
+              {children}
+            </ChatDataProvider>
           </SidebarProvider>
         </AuthProvider>
       </body>
     </html>
   );
 }
+
