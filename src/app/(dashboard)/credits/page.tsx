@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
@@ -18,6 +18,9 @@ interface CreditTransaction {
   createdAt: string;
 }
 interface CreditsData { credits: number; lowBalance: boolean; transactions: CreditTransaction[]; }
+
+const MIN_AMOUNT = 100;
+const QUICK_AMOUNTS = [100, 250, 500, 1000];
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -46,6 +49,51 @@ export default function CreditsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Add Credits modal state
+  const [showModal, setShowModal] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [amountError, setAmountError] = useState("");
+
+  const openModal = useCallback(() => {
+    setAmount("");
+    setAmountError("");
+    setShowModal(true);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setShowModal(false);
+  }, []);
+
+  // Close on Escape key
+  useEffect(() => {
+    if (!showModal) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeModal();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [showModal, closeModal]);
+
+  const handleAmountChange = (value: string) => {
+    // Allow only digits
+    const cleaned = value.replace(/[^0-9]/g, "");
+    setAmount(cleaned);
+    if (amountError) setAmountError("");
+  };
+
+  const handlePayNow = () => {
+    const numAmount = Number(amount);
+    if (!amount || isNaN(numAmount) || numAmount < MIN_AMOUNT) {
+      setAmountError(`Minimum amount is ₹${MIN_AMOUNT}`);
+      return;
+    }
+    setAmountError("");
+
+    // TODO: Add Razorpay popup logic here
+    // razorpayHandler(numAmount);
+    console.log("Pay Now clicked with amount:", numAmount);
+  };
+
   useEffect(() => {
     if (authLoading) return;
     if (!isLoggedIn) { setIsLoading(false); return; }
@@ -62,6 +110,9 @@ export default function CreditsPage() {
   const transactions = [...(data?.transactions ?? [])].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
+
+  const numAmount = Number(amount);
+  const isValidAmount = !isNaN(numAmount) && numAmount >= MIN_AMOUNT;
 
   return (
     <main className="subpage-main">
@@ -100,10 +151,13 @@ export default function CreditsPage() {
               </div>
               <div className="credit-balance-right">
                 {data?.lowBalance && <span className="credit-low-badge">⚠ Low balance</span>}
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="credit-balance-icon">
-                  <line x1="12" y1="1" x2="12" y2="23" />
-                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                </svg>
+                <button id="add-credits-btn" className="add-credits-btn" onClick={openModal}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Add Credits
+                </button>
               </div>
             </div>
 
@@ -137,6 +191,82 @@ export default function CreditsPage() {
           </>
         )}
       </div>
+
+      {/* ── Add Credits Modal ── */}
+      {showModal && (
+        <div className="acm-overlay" onClick={closeModal}>
+          <div className="acm-modal" onClick={(e) => e.stopPropagation()}>
+            {/* Close button */}
+            <button className="acm-close" onClick={closeModal} aria-label="Close">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+
+            {/* Header */}
+            <div className="acm-header">
+              <div className="acm-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="1" x2="12" y2="23" />
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              </div>
+              <h2 className="acm-title">Add Credits</h2>
+              <p className="acm-subtitle">Top up your account to keep using Cognix</p>
+            </div>
+
+            {/* Amount input */}
+            <div className="acm-body">
+              <label className="acm-label" htmlFor="acm-amount-input">Enter amount (₹)</label>
+              <div className={`acm-input-wrap ${amountError ? "acm-input-error" : ""}`}>
+                <span className="acm-currency">₹</span>
+                <input
+                  id="acm-amount-input"
+                  type="text"
+                  inputMode="numeric"
+                  className="acm-input"
+                  placeholder={`Min ₹${MIN_AMOUNT}`}
+                  value={amount}
+                  onChange={(e) => handleAmountChange(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              {amountError && <p className="acm-error-text">{amountError}</p>}
+
+              {/* Quick amount buttons */}
+              <div className="acm-quick-amounts">
+                {QUICK_AMOUNTS.map((qa) => (
+                  <button
+                    key={qa}
+                    className={`acm-quick-btn ${numAmount === qa ? "acm-quick-btn-active" : ""}`}
+                    onClick={() => { setAmount(String(qa)); setAmountError(""); }}
+                  >
+                    ₹{qa}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="acm-footer">
+              <button className="acm-cancel-btn" onClick={closeModal}>Cancel</button>
+              <button
+                id="pay-now-btn"
+                className={`acm-pay-btn ${!isValidAmount ? "acm-pay-btn-disabled" : ""}`}
+                onClick={handlePayNow}
+                disabled={!isValidAmount}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                  <line x1="1" y1="10" x2="23" y2="10" />
+                </svg>
+                Pay Now {isValidAmount ? `· ₹${numAmount}` : ""}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

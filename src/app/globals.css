@@ -2263,6 +2263,280 @@ nav.navbar .navbar-right {
   opacity: 0.4;
 }
 
+/* ── Add Credits button ───────────────────────────────────────── */
+.add-credits-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  background: var(--accent);
+  border: none;
+  padding: 9px 18px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.add-credits-btn:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 35%, transparent);
+  transform: translateY(-1px);
+}
+
+.add-credits-btn:active {
+  transform: translateY(0);
+}
+
+/* ── Add Credits Modal (acm-*) ────────────────────────────────── */
+.acm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  animation: acm-fade-in 0.18s ease;
+}
+
+@keyframes acm-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.acm-modal {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18), 0 0 0 1px var(--border);
+  overflow: hidden;
+  animation: acm-slide-up 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes acm-slide-up {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.acm-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  z-index: 1;
+}
+
+.acm-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.acm-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 24px 4px;
+  text-align: center;
+}
+
+.acm-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-subtle);
+  color: var(--accent);
+  border-radius: var(--radius-md);
+  margin-bottom: 4px;
+}
+
+.acm-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.acm-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.acm-body {
+  padding: 20px 24px 8px;
+}
+
+.acm-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+
+.acm-input-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--bg-base);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0 14px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.acm-input-wrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.acm-input-wrap.acm-input-error {
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 10%, transparent);
+}
+
+.acm-currency {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  margin-right: 6px;
+  user-select: none;
+}
+
+.acm-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding: 12px 0;
+  outline: none;
+  font-family: inherit;
+}
+
+.acm-input::placeholder {
+  color: var(--text-tertiary);
+  font-weight: 400;
+  font-size: 15px;
+}
+
+.acm-error-text {
+  font-size: 12px;
+  color: var(--red);
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.acm-quick-amounts {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.acm-quick-btn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.acm-quick-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-text);
+  background: var(--accent-subtle);
+}
+
+.acm-quick-btn-active {
+  border-color: var(--accent) !important;
+  color: white !important;
+  background: var(--accent) !important;
+}
+
+.acm-footer {
+  display: flex;
+  gap: 10px;
+  padding: 16px 24px 24px;
+}
+
+.acm-cancel-btn {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  padding: 11px 16px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.acm-cancel-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.acm-pay-btn {
+  flex: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+  background: var(--accent);
+  border: none;
+  padding: 11px 20px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.acm-pay-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 30%, transparent);
+  transform: translateY(-1px);
+}
+
+.acm-pay-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.acm-pay-btn-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 /* Transaction list */
 .txn-section {}
 
@@ -2717,6 +2991,28 @@ nav.navbar .navbar-right {
     display: block;
     margin-left: 0;
     margin-top: 2px;
+  }
+
+  /* --- Add Credits modal responsive --- */
+  .add-credits-btn {
+    font-size: 12px;
+    padding: 8px 14px;
+  }
+
+  .acm-modal {
+    max-width: 360px;
+  }
+
+  .acm-header {
+    padding: 24px 20px 4px;
+  }
+
+  .acm-body {
+    padding: 16px 20px 8px;
+  }
+
+  .acm-footer {
+    padding: 14px 20px 20px;
   }
 }
 
