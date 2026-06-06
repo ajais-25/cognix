@@ -5,6 +5,7 @@ import {
   useContext,
   useState,
   useEffect,
+  useLayoutEffect,
   useCallback,
   ReactNode,
 } from "react";
@@ -30,20 +31,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [credits, setCreditsState] = useState<number | null>(null);
   const [lowBalance, setLowBalance] = useState(false);
 
+  // Synchronously hydrate user from localStorage before browser paint.
+  // This runs after hydration (so no mismatch) but before the browser
+  // paints (so no visual flash of unauthenticated UI).
+  useLayoutEffect(() => {
+    try {
+      const stored = localStorage.getItem("cognix_user");
+      if (stored) {
+        setUser(JSON.parse(stored));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const fetchUser = useCallback(async () => {
     try {
       const res = await axios.get("/api/credits");
       setCreditsState(res.data.data.credits);
       setLowBalance(res.data.data.lowBalance);
-      // We don't get user info from credits endpoint — try a cheap ping
       // If the credits endpoint succeeded, the user is authenticated.
-      // We'll store minimal info from sign-in flow.
+      // Re-read localStorage in case it was updated.
       const stored = localStorage.getItem("cognix_user");
       if (stored) {
         setUser(JSON.parse(stored));
       }
     } catch (err: any) {
       if (err.response?.status === 401) {
+        // Session expired or invalid — clear optimistic state
+        localStorage.removeItem("cognix_user");
         setUser(null);
         setCreditsState(null);
         return;

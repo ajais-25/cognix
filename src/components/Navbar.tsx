@@ -36,7 +36,7 @@ export default function Navbar({ onNewChat }: NavbarProps) {
   const handleLogout = async () => {
     setDropdownOpen(false);
     await logout();
-    router.push("/chat");
+    router.refresh();
   };
 
   const initial = user?.name?.charAt(0).toUpperCase() ?? "?";

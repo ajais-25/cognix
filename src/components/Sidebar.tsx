@@ -48,7 +48,7 @@ export default function Sidebar({
   onSelectConversation,
   onNewChat,
 }: SidebarProps) {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isLoading: authLoading } = useAuth();
   const { collapsed, toggleSidebar, mobileOpen, closeMobile } = useSidebar();
   const pathname = usePathname();
   const router = useRouter();
@@ -215,7 +215,13 @@ export default function Sidebar({
 
           {/* Conversation history */}
           <div className="sidebar-divider" />
-          {!isLoggedIn ? (
+          {authLoading || isLoading ? (
+            <div className="sidebar-skeletons">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="sidebar-skeleton" />
+              ))}
+            </div>
+          ) : !isLoggedIn ? (
             <div className="sidebar-auth-prompt">
               <svg
                 width="28"
@@ -234,12 +240,6 @@ export default function Sidebar({
               <Link href="/sign-in" className="sidebar-signin-btn">
                 Sign in
               </Link>
-            </div>
-          ) : isLoading ? (
-            <div className="sidebar-skeletons">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="sidebar-skeleton" />
-              ))}
             </div>
           ) : conversations.length === 0 ? (
             <p className="sidebar-empty">No past conversations yet.</p>

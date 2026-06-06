@@ -52,7 +52,7 @@ export default function DocumentsPage() {
             <p>Sign in to view your documents</p>
             <Link href="/sign-in" className="subpage-signin-btn">Sign in</Link>
           </div>
-        ) : isLoading ? (
+        ) : isLoading || authLoading ? (
           <div className="docs-grid">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="doc-card-skeleton" />

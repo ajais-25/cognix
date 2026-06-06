@@ -2,13 +2,14 @@
 
 import { useState, FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { persistUser } from "@/context/AuthContext";
 import { useAuth } from "@/context/AuthContext";
 
 export default function SignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { refetchUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,7 +26,8 @@ export default function SignInPage() {
 
       persistUser(res.data.data);
       await refetchUser();
-      router.push("/chat");
+      const redirectTo = searchParams.get("next") || "/chat";
+      router.push(redirectTo);
     } catch (err: any) {
       setError(err.response?.data?.message ?? "Sign in failed");
     } finally {
