@@ -101,10 +101,10 @@ export default function InputBar({
           <button
             id="pdf-upload-btn"
             className="input-icon-btn"
-            onClick={() => !isDocMode && fileInputRef.current?.click()}
+            onClick={() => !isDocMode && !isLoading && fileInputRef.current?.click()}
             type="button"
-            disabled={isDocMode}
-            aria-label={isDocMode ? "Upload Disabled" : "Upload PDF"}
+            disabled={isDocMode || isLoading}
+            aria-label={isDocMode ? "Upload Disabled" : isLoading ? "Upload disabled while generating" : "Upload PDF"}
           >
             <svg
               width="18"
@@ -120,7 +120,7 @@ export default function InputBar({
             </svg>
           </button>
           <span className="ui-tooltip-text">
-            {isDocMode ? "Upload Disabled" : "Upload PDF"}
+            {isDocMode ? "Upload Disabled" : isLoading ? "Wait for response" : "Upload PDF"}
           </span>
         </div>
 

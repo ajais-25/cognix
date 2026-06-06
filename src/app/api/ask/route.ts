@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
           message:
             "Insufficient credits to complete this query. Please top up.",
           data: {
-            creditsRemaining: user.credits,
+            creditsRemaining: parseFloat(user.credits.toFixed(2)),
             estimatedCost: normalQueryEstimatedCost, // tells the UI exactly how many credits are needed
           },
         },

@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         success: true,
         message: "Credit Transaction fetched successfully",
         data: {
-          credits: user.credits,
+          credits: parseFloat(user.credits.toFixed(2)),
           lowBalance: hasLowBalance,
           transactions,
         },

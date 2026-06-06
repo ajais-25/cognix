@@ -1,8 +1,21 @@
 "use client";
 
-import { useEffect, useRef, RefObject } from "react";
+import { useEffect, useRef, useState, RefObject } from "react";
 import { StreamingMessage, ChatMode } from "@/lib/types";
 import MessageBubble from "./MessageBubble";
+
+const THINKING_PHRASES = [
+  "Pondering...",
+  "Brewing thoughts...",
+  "Consulting the cosmos...",
+  "Crunching neurons...",
+  "Untangling ideas...",
+  "Summoning wisdom...",
+  "Connecting the dots...",
+  "Channeling brilliance...",
+  "Decoding the matrix...",
+  "Warming up the brain...",
+];
 
 interface ChatAreaProps {
   messages: StreamingMessage[];
@@ -29,6 +42,18 @@ export default function ChatArea({
   scrollRef,
 }: ChatAreaProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [phraseIndex, setPhraseIndex] = useState(() =>
+    Math.floor(Math.random() * THINKING_PHRASES.length)
+  );
+
+  // Cycle through thinking phrases while loading
+  useEffect(() => {
+    if (!isLoading) return;
+    const interval = setInterval(() => {
+      setPhraseIndex((prev) => (prev + 1) % THINKING_PHRASES.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [isLoading]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -182,23 +207,35 @@ export default function ChatArea({
         </div>
       ) : (
         <div className="messages-list">
-          {messages.map((msg, i) => (
-            <MessageBubble
-              key={msg.id}
-              message={msg}
-              isLast={i === messages.length - 1}
-              onFollowUp={onFollowUp}
-            />
-          ))}
-          {isLoading && messages[messages.length - 1]?.role === "user" && (
-            <div className="message-row message-row-model">
-              <div className="message-bubble message-bubble-model">
-                <div className="thinking-dots">
-                  <span /><span /><span />
+          {messages
+            .filter((msg) => !(msg.role === "model" && msg.isStreaming && !msg.content))
+            .map((msg, i, arr) => (
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                isLast={i === arr.length - 1}
+                onFollowUp={onFollowUp}
+              />
+            ))}
+          {isLoading && (() => {
+            const last = messages[messages.length - 1];
+            return last?.role === "model" && last.isStreaming && !last.content;
+          })() && (
+              <div className="message-row message-row-model">
+                <div className="message-bubble message-bubble-model">
+                  <div className="thinking-indicator">
+                    <div className="thinking-indicator-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                      </svg>
+                    </div>
+                    <span key={phraseIndex} className="thinking-indicator-text">
+                      {THINKING_PHRASES[phraseIndex]}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
           <div ref={bottomRef} />
         </div>
       )}

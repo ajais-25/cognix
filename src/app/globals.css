@@ -1065,45 +1065,68 @@ nav.navbar .navbar-right {
   color: white;
 }
 
-/* ─── Thinking dots ───────────────────────────────────────────── */
-.thinking-dots {
+/* ─── Thinking indicator ──────────────────────────────────────── */
+.thinking-indicator {
   display: flex;
-  gap: 5px;
-  padding: 6px 2px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  width: fit-content;
+  animation: thinking-slide-in 0.3s ease-out;
 }
 
-.thinking-dots span {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--text-tertiary);
-  animation: bounce-dot 1.2s infinite ease-in-out;
+.thinking-indicator-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  animation: spin-sparkle 2s linear infinite;
+  flex-shrink: 0;
 }
 
-.thinking-dots span:nth-child(1) {
-  animation-delay: 0s;
+.thinking-indicator-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-style: italic;
+  animation: thinking-fade-in 0.4s ease-out;
+  white-space: nowrap;
 }
 
-.thinking-dots span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.thinking-dots span:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-@keyframes bounce-dot {
-
-  0%,
-  80%,
-  100% {
-    transform: translateY(0);
-    opacity: 0.4;
+@keyframes thinking-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
   }
 
-  40% {
-    transform: translateY(-5px);
+  to {
     opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes thinking-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes spin-sparkle {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
   }
 }
 

@@ -11,9 +11,8 @@ export function isLowBalance(credits: number): boolean {
 }
 
 export function estimateQueryCost(inputTokens: number): number {
-  return (
-    Math.ceil((inputTokens + OUTPUT_BUFFER_TOKENS) / 1000) *
-    CREDITS_PER_1K_TOKENS
+  return parseFloat(
+    (((inputTokens + OUTPUT_BUFFER_TOKENS) / 1000) * CREDITS_PER_1K_TOKENS).toFixed(2),
   );
 }
 
@@ -35,10 +34,10 @@ export async function deductQueryCredits(params: {
   newBalance: number;
   lowBalance: boolean;
 }> {
-  const rawCost = Math.ceil(
-    (params.tokenMeta.totalTokens / 1000) * CREDITS_PER_1K_TOKENS,
+  const rawCost = parseFloat(
+    ((params.tokenMeta.totalTokens / 1000) * CREDITS_PER_1K_TOKENS).toFixed(2),
   );
-  const creditsDeducted = Math.min(rawCost, params.balance); // safety cap
+  const creditsDeducted = parseFloat(Math.min(rawCost, params.balance).toFixed(2)); // safety cap
 
   const updatedUser = await User.findByIdAndUpdate(
     params.userId,
@@ -52,7 +51,9 @@ export async function deductQueryCredits(params: {
     );
   }
 
-  const newBalance = updatedUser?.credits ?? params.balance - creditsDeducted;
+  const newBalance = parseFloat(
+    (updatedUser?.credits ?? params.balance - creditsDeducted).toFixed(2),
+  );
 
   await CreditTransaction.create({
     userId: params.userId,
@@ -77,7 +78,7 @@ export async function deductUploadCredits(params: {
   lowBalance: boolean;
 }> {
   const rawCost = params.totalChunks * CREDITS_PER_CHUNK;
-  const creditsDeducted = Math.min(rawCost, params.balance); // safety cap — prevents negative balance on race condition
+  const creditsDeducted = parseFloat(Math.min(rawCost, params.balance).toFixed(2)); // safety cap — prevents negative balance on race condition
 
   const updatedUser = await User.findByIdAndUpdate(
     params.userId,
@@ -91,7 +92,9 @@ export async function deductUploadCredits(params: {
     );
   }
 
-  const newBalance = updatedUser?.credits ?? params.balance - creditsDeducted;
+  const newBalance = parseFloat(
+    (updatedUser?.credits ?? params.balance - creditsDeducted).toFixed(2),
+  );
 
   await CreditTransaction.create({
     userId: params.userId,

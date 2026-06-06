@@ -189,7 +189,7 @@ export default function CreditsPage() {
             <div className={`credit-balance-card ${data?.lowBalance ? "credit-low" : ""}`}>
               <div className="credit-balance-left">
                 <span className="credit-balance-label">Current Balance</span>
-                <span className="credit-balance-amount">{data?.credits ?? 0}</span>
+                <span className="credit-balance-amount">{(data?.credits ?? 0).toFixed(2)}</span>
                 <span className="credit-balance-unit">credits</span>
               </div>
               <div className="credit-balance-right">
@@ -222,9 +222,9 @@ export default function CreditsPage() {
                       </div>
                       <div className="txn-right">
                         <span className={`txn-amount ${typeClass[txn.type]}`}>
-                          {txn.type === "deduction" ? "−" : "+"}{Math.abs(txn.amount)}
+                          {txn.type === "deduction" ? "−" : "+"}{Math.abs(txn.amount).toFixed(2)}
                         </span>
-                        <span className="txn-balance-after">Bal: {txn.balanceAfter}</span>
+                        <span className="txn-balance-after">Bal: {txn.balanceAfter.toFixed(2)}</span>
                       </div>
                     </div>
                   ))}
