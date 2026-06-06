@@ -16,6 +16,7 @@ const publicApiRoutes = [
   "/api/users/verify-code",
   "/api/users/forgot-password",
   "/api/users/reset-password",
+  "/api/webhook/razorpay",
 ];
 
 const openRoutes = ["/chat"];

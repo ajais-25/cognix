@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
         const user = await User.findByIdAndUpdate(
           order.userId,
           { $inc: { credits: creditsToInc } },
-          { new: true }
+          { returnDocument: "after" }
         );
 
         if (user) {

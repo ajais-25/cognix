@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
+import toast from "react-hot-toast";
 
 interface TokenMeta { promptTokens: number; outputTokens: number; totalTokens: number; }
 interface UploadMeta { totalChunks: number; creditsPerChunk: number; }
@@ -44,7 +45,7 @@ function TxnDescription({ txn }: { txn: CreditTransaction }) {
 }
 
 export default function CreditsPage() {
-  const { isLoggedIn, isLoading: authLoading } = useAuth();
+  const { isLoggedIn, isLoading: authLoading, user } = useAuth();
   const [data, setData] = useState<CreditsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -53,6 +54,7 @@ export default function CreditsPage() {
   const [showModal, setShowModal] = useState(false);
   const [amount, setAmount] = useState("");
   const [amountError, setAmountError] = useState("");
+  const [paying, setPaying] = useState(false);
 
   const openModal = useCallback(() => {
     setAmount("");
@@ -81,22 +83,7 @@ export default function CreditsPage() {
     if (amountError) setAmountError("");
   };
 
-  const handlePayNow = () => {
-    const numAmount = Number(amount);
-    if (!amount || isNaN(numAmount) || numAmount < MIN_AMOUNT) {
-      setAmountError(`Minimum amount is ₹${MIN_AMOUNT}`);
-      return;
-    }
-    setAmountError("");
-
-    // TODO: Add Razorpay popup logic here
-    // razorpayHandler(numAmount);
-    console.log("Pay Now clicked with amount:", numAmount);
-  };
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (!isLoggedIn) { setIsLoading(false); return; }
+  const fetchCredits = useCallback(() => {
     axios.get("/api/credits")
       .then((res) => {
         const d = res.data;
@@ -105,6 +92,62 @@ export default function CreditsPage() {
       })
       .catch((err) => setError(err.response?.data?.message ?? "Network error"))
       .finally(() => setIsLoading(false));
+  }, []);
+
+  const razorpayHandler = async (amount: number) => {
+    setPaying(true);
+    try {
+      const response = await axios.post("/api/credits/topup", {
+        amount,
+      });
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
+        amount: response.data.data.amount,
+        currency: response.data.data.currency,
+        name: "Cognix",
+        description: `Credit Topup`,
+        order_id: response.data.data.orderId,
+        handler: function () {
+          toast.success("Payment successful!");
+          fetchCredits();
+        },
+        prefill: {
+          email: user?.email || "",
+        },
+        modal: {
+          ondismiss: function () {
+            toast.error("Payment process was cancelled.");
+          },
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+      closeModal();
+    } catch (error: any) {
+      console.error("Error while creating order", error);
+      toast.error(error.response?.data?.message ?? "Something went wrong");
+    } finally {
+      setPaying(false);
+    }
+  }
+
+  const handlePayNow = () => {
+    const numAmount = Number(amount);
+    if (!amount || isNaN(numAmount) || numAmount < MIN_AMOUNT) {
+      setAmountError(`Minimum amount is ₹${MIN_AMOUNT}`);
+      return;
+    }
+    setAmountError("");
+
+    razorpayHandler(numAmount);
+  };
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!isLoggedIn) { setIsLoading(false); return; }
+    fetchCredits();
   }, [isLoggedIn, authLoading]);
 
   const transactions = [...(data?.transactions ?? [])].sort(
@@ -253,15 +296,19 @@ export default function CreditsPage() {
               <button className="acm-cancel-btn" onClick={closeModal}>Cancel</button>
               <button
                 id="pay-now-btn"
-                className={`acm-pay-btn ${!isValidAmount ? "acm-pay-btn-disabled" : ""}`}
+                className={`acm-pay-btn ${!isValidAmount || paying ? "acm-pay-btn-disabled" : ""}`}
                 onClick={handlePayNow}
-                disabled={!isValidAmount}
+                disabled={!isValidAmount || paying}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-                  <line x1="1" y1="10" x2="23" y2="10" />
-                </svg>
-                Pay Now {isValidAmount ? `· ₹${numAmount}` : ""}
+                {paying ? (
+                  <span className="acm-pay-spinner" />
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                    <line x1="1" y1="10" x2="23" y2="10" />
+                  </svg>
+                )}
+                {paying ? "Processing…" : `Pay Now ${isValidAmount ? `· ₹${numAmount}` : ""}`}
               </button>
             </div>
           </div>
