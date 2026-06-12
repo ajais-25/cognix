@@ -7,7 +7,6 @@ import { useChat } from "@/hooks/useChat";
 import { useDocuments } from "@/hooks/useDocuments";
 import { useConversations } from "@/hooks/useConversations";
 import { useAuth } from "@/context/AuthContext";
-import { UserDocument } from "@/lib/types";
 import ChatArea from "@/components/ChatArea";
 import InputBar from "@/components/InputBar";
 
@@ -52,14 +51,6 @@ export default function ChatPage() {
     uploadDocument,
     clearUploadState,
   } = useDocuments();
-
-  const handleNewChat = useCallback(() => {
-    router.push("/chat");
-    resetChat();
-    setMode({ type: "chat" });
-    setActiveConversationId(null);
-    clearUploadState();
-  }, [router, resetChat, clearUploadState]);
 
   const handleSelectConversation = useCallback(
     async (id: string, type?: "chat" | "document", documentId?: string) => {
@@ -179,16 +170,6 @@ export default function ChatPage() {
       }
     }
   }, [docId, documents, resetChat]);
-
-  const handleSelectDocument = useCallback((doc: UserDocument) => {
-    setMode({
-      type: "document",
-      documentId: doc._id,
-      documentName: doc.fileName,
-    });
-    resetChat();
-    setActiveConversationId(null);
-  }, [resetChat]);
 
   const handleFollowUp = useCallback((q: string) => {
     setFollowUpInput(q);
