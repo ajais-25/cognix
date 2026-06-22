@@ -772,6 +772,8 @@ nav.navbar .navbar-right {
   font-size: 14px;
   line-height: 1.75;
   color: var(--text-primary);
+  overflow-x: hidden;
+  min-width: 0;
 }
 
 .message-markdown p {
@@ -928,10 +930,16 @@ nav.navbar .navbar-right {
   text-underline-offset: 2px;
 }
 
-.message-markdown table {
-  width: 100%;
-  border-collapse: collapse;
+.table-scroll-wrapper {
+  overflow-x: auto;
   margin-bottom: 12px;
+  border-radius: var(--radius-md);
+}
+
+.message-markdown table {
+  min-width: 100%;
+  width: max-content;
+  border-collapse: collapse;
   font-size: 13px;
 }
 

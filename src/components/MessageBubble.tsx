@@ -79,6 +79,14 @@ const markdownComponents = {
       </code>
     );
   },
+  // Wrap tables in a horizontally scrollable container
+  table({ children, ...props }: React.ComponentPropsWithoutRef<"table">) {
+    return (
+      <div className="table-scroll-wrapper">
+        <table {...props}>{children}</table>
+      </div>
+    );
+  },
   // Override <pre> so that fenced blocks without a language still get the copy button
   pre({ children, ...props }: React.ComponentPropsWithoutRef<"pre">) {
     // If children is already a code-block-wrapper (language was detected), pass through
