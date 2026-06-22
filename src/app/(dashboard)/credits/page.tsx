@@ -117,7 +117,7 @@ export default function CreditsPage() {
         },
         modal: {
           ondismiss: function () {
-            toast.error("Payment process was cancelled.");
+            toast.error("Payment process was cancelled");
           },
         },
       };
