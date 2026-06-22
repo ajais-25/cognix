@@ -2327,8 +2327,13 @@ nav.navbar .navbar-right {
 }
 
 @keyframes acm-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .acm-modal {
@@ -2345,8 +2350,15 @@ nav.navbar .navbar-right {
 }
 
 @keyframes acm-slide-up {
-  from { opacity: 0; transform: translateY(12px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .acm-close {
@@ -2570,7 +2582,9 @@ nav.navbar .navbar-right {
 }
 
 @keyframes acm-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Transaction list */
@@ -2674,6 +2688,13 @@ nav.navbar .navbar-right {
 .txn-amount {
   font-size: 14px;
   font-weight: 700;
+}
+
+.txn-amount.txn-topup,
+.txn-amount.txn-deduction {
+  background: none;
+  padding: 0;
+  border-radius: 0;
 }
 
 .txn-balance-after {
@@ -2999,12 +3020,31 @@ nav.navbar .navbar-right {
 
   /* --- Credits page responsive styles --- */
   .credit-balance-card {
-    padding: 18px 20px;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 20px;
     margin-bottom: 20px;
+    gap: 16px;
+  }
+
+  .credit-balance-left {
+    gap: 4px;
   }
 
   .credit-balance-amount {
-    font-size: 32px;
+    font-size: 34px;
+  }
+
+  .credit-balance-right {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .add-credits-btn {
+    font-size: 13px;
+    padding: 10px 18px;
+    width: auto;
   }
 
   .credit-balance-icon {
@@ -3015,6 +3055,11 @@ nav.navbar .navbar-right {
   .txn-row {
     padding: 12px 14px;
     gap: 8px;
+  }
+
+  .txn-left {
+    min-width: 0;
+    overflow: hidden;
   }
 
   .txn-desc {
@@ -3030,11 +3075,6 @@ nav.navbar .navbar-right {
   }
 
   /* --- Add Credits modal responsive --- */
-  .add-credits-btn {
-    font-size: 12px;
-    padding: 8px 14px;
-  }
-
   .acm-modal {
     max-width: 360px;
   }
@@ -3082,6 +3122,32 @@ nav.navbar .navbar-right {
     font-size: 13px;
   }
 
+  /* --- Credits page small phone fixes --- */
+  .credit-balance-card {
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .credit-balance-amount {
+    font-size: 28px;
+  }
+
+  .credit-balance-right {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .credit-low-badge {
+    text-align: center;
+  }
+
+  .add-credits-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 11px 18px;
+    font-size: 13.5px;
+  }
+
   /* Stack transactions on small phones to prevent horizontal squishing */
   .txn-row {
     flex-direction: column;
@@ -3092,6 +3158,12 @@ nav.navbar .navbar-right {
 
   .txn-left {
     width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .txn-type-badge {
+    font-size: 9px;
   }
 
   .txn-right {
@@ -3102,6 +3174,60 @@ nav.navbar .navbar-right {
     border-top: 1px solid var(--border);
     padding-top: 8px;
     margin-top: 2px;
+  }
+
+  /* --- Add Credits Modal bottom-sheet on small phones --- */
+  .acm-overlay {
+    align-items: flex-end;
+  }
+
+  .acm-modal {
+    max-width: 100%;
+    margin: 0;
+    border-radius: 16px 16px 0 0;
+    animation: acm-slide-up-mobile 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes acm-slide-up-mobile {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .acm-header {
+    padding: 20px 18px 4px;
+  }
+
+  .acm-body {
+    padding: 14px 18px 8px;
+  }
+
+  .acm-quick-amounts {
+    gap: 6px;
+  }
+
+  .acm-quick-btn {
+    flex: 1;
+    text-align: center;
+    padding: 8px 10px;
+    min-width: 0;
+  }
+
+  .acm-footer {
+    padding: 14px 18px 24px;
+    /* Extra bottom padding for safe area */
+  }
+
+  .acm-cancel-btn,
+  .acm-pay-btn {
+    padding: 13px 16px;
+    /* Larger touch targets */
   }
 
   /* --- Auth pages responsive refinements --- */
