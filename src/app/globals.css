@@ -119,6 +119,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -2820,6 +2821,8 @@ nav.navbar .navbar-right {
   }
 
   nav.navbar {
+    position: sticky;
+    top: 0;
     padding: 0 12px;
     gap: 8px;
   }
