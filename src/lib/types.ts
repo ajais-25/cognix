@@ -42,7 +42,6 @@ export interface AuthUser {
   isVerified: boolean;
 }
 
-// Active chat mode — either a plain chat or a document-scoped RAG chat
 export type ChatMode =
   | { type: "chat" }
   | { type: "document"; documentId: string; documentName: string };

@@ -54,21 +54,40 @@ export default function Sidebar({
   const router = useRouter();
   const grouped = groupByDate(conversations);
 
-  const handleConversationClick = (id: string, type: "chat" | "document", documentId?: string) => {
+  const handleConversationClick = (
+    id: string,
+    type: "chat" | "document",
+    documentId?: string,
+  ) => {
     router.push(`/chat/${id}`);
     onSelectConversation(id, type, documentId);
-    closeMobile(); // Close sidebar on mobile after selecting a conversation
+    closeMobile();
   };
 
   return (
-    <aside className={`sidebar${(collapsed && !mobileOpen) ? " sidebar-collapsed" : ""}${mobileOpen ? " sidebar-mobile-open" : ""}`} suppressHydrationWarning>
+    <aside
+      className={`sidebar${collapsed && !mobileOpen ? " sidebar-collapsed" : ""}${mobileOpen ? " sidebar-mobile-open" : ""}`}
+      suppressHydrationWarning
+    >
       {/* Header: toggle only */}
       <div className="sidebar-header">
         <button
           className="sidebar-toggle-btn"
           onClick={mobileOpen ? closeMobile : toggleSidebar}
-          aria-label={mobileOpen ? "Close sidebar" : collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          title={mobileOpen ? "Close sidebar" : collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={
+            mobileOpen
+              ? "Close sidebar"
+              : collapsed
+                ? "Expand sidebar"
+                : "Collapse sidebar"
+          }
+          title={
+            mobileOpen
+              ? "Close sidebar"
+              : collapsed
+                ? "Expand sidebar"
+                : "Collapse sidebar"
+          }
         >
           <svg
             width="16"
@@ -87,7 +106,13 @@ export default function Sidebar({
         </button>
 
         {(!collapsed || mobileOpen) && (
-          <button className="new-chat-btn" onClick={() => { onNewChat(); closeMobile(); }}>
+          <button
+            className="new-chat-btn"
+            onClick={() => {
+              onNewChat();
+              closeMobile();
+            }}
+          >
             <svg
               width="14"
               height="14"
@@ -189,7 +214,16 @@ export default function Sidebar({
                 onClick={closeMobile}
               >
                 <span style={{ display: "inline-flex", flexShrink: 0 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                     <polyline points="14 2 14 8 20 8" />
                   </svg>
@@ -203,7 +237,16 @@ export default function Sidebar({
                 onClick={closeMobile}
               >
                 <span style={{ display: "inline-flex", flexShrink: 0 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <line x1="12" y1="1" x2="12" y2="23" />
                     <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                   </svg>

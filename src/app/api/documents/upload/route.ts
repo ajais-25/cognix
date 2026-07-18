@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
           message: `Insufficient credits. This document requires ${uploadCost} credits.`,
           data: {
             creditsRemaining: currentCredits,
-            uploadCost, // UI can tell user exactly how many credits to top up
+            uploadCost,
           },
         },
         { status: 402 },

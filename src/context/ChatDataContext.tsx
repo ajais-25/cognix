@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import axios from "axios";
 import { Conversation, UserDocument } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext";
@@ -34,21 +40,21 @@ interface ChatDataContextType {
       fileName: string;
       creditsRemaining: number;
       lowBalance: boolean;
-    }) => void
+    }) => void,
   ) => Promise<void>;
   clearUploadState: () => void;
 }
 
-const ChatDataContext = createContext<ChatDataContextType | undefined>(undefined);
+const ChatDataContext = createContext<ChatDataContextType | undefined>(
+  undefined,
+);
 
 export function ChatDataProvider({ children }: { children: React.ReactNode }) {
   const { isLoggedIn, isLoading: authLoading } = useAuth();
 
-  // Conversations state
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
 
-  // Documents state
   const [documents, setDocuments] = useState<UserDocument[]>([]);
   const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
   const [isUploadingDocument, setIsUploadingDocument] = useState(false);
@@ -98,7 +104,7 @@ export function ChatDataProvider({ children }: { children: React.ReactNode }) {
         fileName: string;
         creditsRemaining: number;
         lowBalance: boolean;
-      }) => void
+      }) => void,
     ) => {
       setUploadError(null);
       setUploadSuccess(false);
@@ -114,12 +120,14 @@ export function ChatDataProvider({ children }: { children: React.ReactNode }) {
         await fetchDocuments();
         onSuccess?.(res.data.data);
       } catch (err: any) {
-        setUploadError(err.response?.data?.message ?? "Network error while uploading.");
+        setUploadError(
+          err.response?.data?.message ?? "Network error while uploading.",
+        );
       } finally {
         setIsUploadingDocument(false);
       }
     },
-    [fetchDocuments]
+    [fetchDocuments],
   );
 
   const clearUploadState = useCallback(() => {
@@ -127,7 +135,6 @@ export function ChatDataProvider({ children }: { children: React.ReactNode }) {
     setUploadSuccess(false);
   }, []);
 
-  // Fetch initial data when logged in
   useEffect(() => {
     if (authLoading) return;
     if (isLoggedIn) {

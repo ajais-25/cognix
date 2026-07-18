@@ -28,11 +28,29 @@ function CopyButton({ text }: { text: string }) {
       title={copied ? "Copied!" : "Copy code"}
     >
       {copied ? (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <polyline points="20 6 9 17 4 12" />
         </svg>
       ) : (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
         </svg>
@@ -43,11 +61,14 @@ function CopyButton({ text }: { text: string }) {
 
 /* ── Custom renderers for ReactMarkdown ────────────────────────── */
 const markdownComponents = {
-  code({ className, children, ...props }: React.ComponentPropsWithoutRef<"code"> & { className?: string }) {
+  code({
+    className,
+    children,
+    ...props
+  }: React.ComponentPropsWithoutRef<"code"> & { className?: string }) {
     const match = /language-(\w+)/.exec(className || "");
     const codeString = String(children).replace(/\n$/, "");
 
-    // Fenced code block (has a language class OR is inside a <pre>)
     if (match) {
       return (
         <div className="code-block-wrapper">
@@ -72,14 +93,12 @@ const markdownComponents = {
       );
     }
 
-    // Inline code
     return (
       <code className={className} {...props}>
         {children}
       </code>
     );
   },
-  // Wrap tables in a horizontally scrollable container
   table({ children, ...props }: React.ComponentPropsWithoutRef<"table">) {
     return (
       <div className="table-scroll-wrapper">
@@ -87,16 +106,12 @@ const markdownComponents = {
       </div>
     );
   },
-  // Override <pre> so that fenced blocks without a language still get the copy button
   pre({ children, ...props }: React.ComponentPropsWithoutRef<"pre">) {
-    // If children is already a code-block-wrapper (language was detected), pass through
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const child = children as React.ReactElement<any>;
     if (child?.props?.className && /language-/.test(child.props.className)) {
       return <>{children}</>;
     }
 
-    // No-language fenced block: wrap in copy-enabled container
     const codeString =
       typeof child?.props?.children === "string"
         ? child.props.children.replace(/\n$/, "")
@@ -131,8 +146,12 @@ export default function MessageBubble({
   const isError = message.isError;
 
   return (
-    <div className={`message-row ${isUser ? "message-row-user" : "message-row-model"}`}>
-      <div className={`message-bubble ${isUser ? "message-bubble-user" : isError ? "message-bubble-error" : "message-bubble-model"}`}>
+    <div
+      className={`message-row ${isUser ? "message-row-user" : "message-row-model"}`}
+    >
+      <div
+        className={`message-bubble ${isUser ? "message-bubble-user" : isError ? "message-bubble-error" : "message-bubble-model"}`}
+      >
         {isUser ? (
           <p className="message-user-text">{message.content}</p>
         ) : isError ? (
@@ -194,4 +213,3 @@ export default function MessageBubble({
     </div>
   );
 }
-

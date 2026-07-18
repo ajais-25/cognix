@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useRef,
-  useState,
-  useEffect,
-  KeyboardEvent,
-  ChangeEvent,
-} from "react";
+import { useRef, useState, useEffect, KeyboardEvent, ChangeEvent } from "react";
 
 interface InputBarProps {
   onSend: (query: string) => void;
@@ -43,11 +37,9 @@ export default function InputBar({
     onUpload?.(file);
   };
 
-  // When a follow-up chip is clicked, parent updates initialValue
   useEffect(() => {
     setValue(initialValue);
-    // Set value directly on the DOM element and resize immediately,
-    // since React may not have flushed the state update yet
+
     const el = textareaRef.current;
     if (el) {
       el.value = initialValue;
@@ -88,7 +80,9 @@ export default function InputBar({
 
   return (
     <div className="input-bar-wrapper">
-      <div className={`input-bar ${isLoading ? "input-bar-loading" : ""} ${isDocMode ? "input-bar-doc-mode" : ""}`}>
+      <div
+        className={`input-bar ${isLoading ? "input-bar-loading" : ""} ${isDocMode ? "input-bar-doc-mode" : ""}`}
+      >
         <input
           ref={fileInputRef}
           type="file"
@@ -101,10 +95,18 @@ export default function InputBar({
           <button
             id="pdf-upload-btn"
             className="input-icon-btn"
-            onClick={() => !isDocMode && !isLoading && fileInputRef.current?.click()}
+            onClick={() =>
+              !isDocMode && !isLoading && fileInputRef.current?.click()
+            }
             type="button"
             disabled={isDocMode || isLoading}
-            aria-label={isDocMode ? "Upload Disabled" : isLoading ? "Upload disabled while generating" : "Upload PDF"}
+            aria-label={
+              isDocMode
+                ? "Upload Disabled"
+                : isLoading
+                  ? "Upload disabled while generating"
+                  : "Upload PDF"
+            }
           >
             <svg
               width="18"
@@ -120,7 +122,11 @@ export default function InputBar({
             </svg>
           </button>
           <span className="ui-tooltip-text">
-            {isDocMode ? "Upload Disabled" : isLoading ? "Wait for response" : "Upload PDF"}
+            {isDocMode
+              ? "Upload Disabled"
+              : isLoading
+                ? "Wait for response"
+                : "Upload PDF"}
           </span>
         </div>
 

@@ -28,7 +28,6 @@ export function useChat(mode: ChatMode) {
 
       abortRef.current = new AbortController();
 
-      // Optimistically add user bubble
       const userMsg: StreamingMessage = {
         id: newId(),
         role: "user",
@@ -60,8 +59,8 @@ export function useChat(mode: ChatMode) {
             signal: abortRef.current.signal,
             responseType: "stream",
             adapter: "fetch",
-            transformResponse: [data => data],
-          }
+            transformResponse: [(data) => data],
+          },
         );
 
         if (!res.data) {
@@ -143,8 +142,8 @@ export function useChat(mode: ChatMode) {
                               m.content ||
                               (typeof event.data === "string"
                                 ? event.data
-                                : (event.data as { message?: string })?.message ??
-                                  "An error occurred."),
+                                : ((event.data as { message?: string })
+                                    ?.message ?? "An error occurred.")),
                             isError: true,
                           }
                         : m,
@@ -158,13 +157,17 @@ export function useChat(mode: ChatMode) {
           }
         }
       } catch (err: unknown) {
-        if ((err as Error)?.name === "AbortError" || axios.isCancel(err)) return;
+        if ((err as Error)?.name === "AbortError" || axios.isCancel(err))
+          return;
 
         let errMsg = "Connection error. Please try again.";
         if (axios.isAxiosError(err) && err.response?.data) {
           try {
             const data = err.response.data;
-            if (data instanceof ReadableStream || (data && typeof (data as any).getReader === "function")) {
+            if (
+              data instanceof ReadableStream ||
+              (data && typeof (data as any).getReader === "function")
+            ) {
               const reader = (data as any).getReader();
               const decoder = new TextDecoder();
               let errorString = "";
@@ -188,7 +191,10 @@ export function useChat(mode: ChatMode) {
           errMsg = err.message;
         }
 
-        if (errMsg === "Unauthorized" || errMsg === "Invalid or expired token") {
+        if (
+          errMsg === "Unauthorized" ||
+          errMsg === "Invalid or expired token"
+        ) {
           errMsg = "Please sign in to send messages.";
         }
 

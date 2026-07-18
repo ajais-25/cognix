@@ -150,12 +150,11 @@ export async function POST(request: NextRequest) {
       webSearchResults = webSearchResponse.results;
     }
 
-    // Build the current-turn prompt
     const currentPrompt = needsWebSearch
       ? PROMPT_TEMPLATE.replace(
-        "{{WEB_SEARCH_RESULTS}}",
-        JSON.stringify(webSearchResults),
-      ).replace("{{USER_QUERY}}", query)
+          "{{WEB_SEARCH_RESULTS}}",
+          JSON.stringify(webSearchResults),
+        ).replace("{{USER_QUERY}}", query)
       : `## USER_QUERY\n    ${query}`;
 
     const contents = [
@@ -166,7 +165,6 @@ export async function POST(request: NextRequest) {
       { role: "user" as const, parts: [{ text: currentPrompt }] },
     ];
 
-    // Count normal query input tokens
     const { totalTokens: normalQueryInputTokens } =
       await gemini.models.countTokens({
         model: "gemini-2.5-flash-lite",
@@ -185,14 +183,13 @@ export async function POST(request: NextRequest) {
             "Insufficient credits to complete this query. Please top up.",
           data: {
             creditsRemaining: parseFloat(user.credits.toFixed(2)),
-            estimatedCost: normalQueryEstimatedCost, // tells the UI exactly how many credits are needed
+            estimatedCost: normalQueryEstimatedCost,
           },
         },
         { status: 402 },
       );
     }
 
-    // Stream the answer as plain text (no JSON schema)
     const stream = await gemini.models.generateContentStream({
       model: "gemini-3-flash-preview",
       contents,
@@ -220,10 +217,10 @@ export async function POST(request: NextRequest) {
           let fullAnswer = "";
           let normalQueryUsageMetadata:
             | {
-              promptTokenCount?: number;
-              candidatesTokenCount?: number;
-              totalTokenCount?: number;
-            }
+                promptTokenCount?: number;
+                candidatesTokenCount?: number;
+                totalTokenCount?: number;
+              }
             | undefined;
 
           for await (const chunk of stream) {
@@ -285,10 +282,10 @@ export async function POST(request: NextRequest) {
           let followUps: string[] = [];
           let followUpUsageMetadata:
             | {
-              promptTokenCount?: number;
-              candidatesTokenCount?: number;
-              totalTokenCount?: number;
-            }
+                promptTokenCount?: number;
+                candidatesTokenCount?: number;
+                totalTokenCount?: number;
+              }
             | undefined;
 
           if (followUpResponse.usageMetadata) {
@@ -364,7 +361,7 @@ export async function POST(request: NextRequest) {
                     conversationId: convId,
                     creditsUsed: creditsDeducted,
                     creditsRemaining: newBalance,
-                    lowBalance, // frontend shows warning banner when true
+                    lowBalance,
                   },
                 }),
               ),

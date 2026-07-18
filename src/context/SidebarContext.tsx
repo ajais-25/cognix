@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode,
+} from "react";
 
 interface SidebarContextValue {
   collapsed: boolean;
@@ -25,7 +32,6 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Close mobile sidebar when resizing past the breakpoint
   useEffect(() => {
     const mql = window.matchMedia("(min-width: 769px)");
     const handler = () => {

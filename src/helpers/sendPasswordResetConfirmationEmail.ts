@@ -10,14 +10,12 @@ export async function sendPasswordResetConfirmationEmail(
   try {
     const resend = getResendClient();
 
-    const { data, error } = await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: "onboarding@resend.dev",
       to: email,
       subject: "Cognix | Password Reset Confirmation",
       react: PasswordResetConfirmationEmail({ name, resetDate, supportEmail }),
     });
-
-    // console.log("Email Data: ", data);
 
     if (error) {
       return {

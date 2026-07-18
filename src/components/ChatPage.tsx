@@ -26,7 +26,9 @@ export default function ChatPage() {
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
   >(null);
-  const isHistoryLoading = !!(urlConversationId && activeConversationId !== urlConversationId);
+  const isHistoryLoading = !!(
+    urlConversationId && activeConversationId !== urlConversationId
+  );
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const chatAreaRef = useRef<HTMLDivElement>(null);
 
@@ -121,7 +123,6 @@ export default function ChatPage() {
     prevDocIdRef.current = docId || null;
   }, [docId, urlConversationId, resetChat, clearUploadState]);
 
-  // Reactive sign-out reset: clear chat, reset mode, and clear upload states when signing out.
   useEffect(() => {
     if (!authLoading && !isLoggedIn) {
       resetChat();
@@ -189,7 +190,6 @@ export default function ChatPage() {
     return () => el.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
-  // Auto-hide button when new messages arrive and we auto-scroll to bottom
   useEffect(() => {
     const el = chatAreaRef.current;
     if (!el) return;

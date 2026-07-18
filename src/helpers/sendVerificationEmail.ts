@@ -10,14 +10,12 @@ export async function sendVerificationEmail(
   try {
     const resend = getResendClient();
 
-    const { data, error } = await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: "onboarding@resend.dev",
       to: email,
       subject: "Cognix | Verification Code",
       react: VerificationEmail({ name, verifyUrl, otp: verifyCode }),
     });
-
-    // console.log("Email Data: ", data);
 
     if (error) {
       return { success: false, message: "Error sending verification email" };

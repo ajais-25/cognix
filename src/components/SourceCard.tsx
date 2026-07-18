@@ -37,8 +37,13 @@ export default function SourceCard({ source }: SourceCardProps) {
       title={source.title}
     >
       {favicon && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={favicon} alt="" width={14} height={14} className="source-favicon" />
+        <img
+          src={favicon}
+          alt=""
+          width={14}
+          height={14}
+          className="source-favicon"
+        />
       )}
       <span className="source-domain">{domain}</span>
     </a>

@@ -102,8 +102,7 @@ export async function POST(
         return NextResponse.json(
           {
             success: false,
-            message:
-              "This conversation belongs to a different document.",
+            message: "This conversation belongs to a different document.",
           },
           { status: 400 },
         );
@@ -133,7 +132,6 @@ export async function POST(
       );
     }
 
-    // Fetch prior messages for this conversation (if continuing one)
     let chatHistory: { role: "user" | "model"; content: string }[] = [];
     if (conversationId) {
       const previousMessages = await Message.find({ conversationId })
@@ -164,7 +162,6 @@ export async function POST(
       { role: "user" as const, parts: [{ text: currentPrompt }] },
     ];
 
-    // Count input tokens
     const { totalTokens: inputTokens } = await gemini.models.countTokens({
       model: "gemini-2.5-flash-lite",
       contents,
@@ -172,7 +169,6 @@ export async function POST(
 
     const estimatedCost = estimateQueryCost(inputTokens ?? 0);
 
-    // Re-fetch credits atomically to guard against concurrent requests that may have depleted the balance between the initial user fetch and this point.
     const freshUser = await User.findById(userId).select("credits").lean();
     const currentCredits =
       (freshUser as { credits?: number } | null)?.credits ?? user.credits;
@@ -185,7 +181,7 @@ export async function POST(
             "Insufficient credits to complete this query. Please top up.",
           data: {
             creditsRemaining: currentCredits,
-            estimatedCost: estimatedCost, // tells the UI exactly how many credits are needed
+            estimatedCost: estimatedCost,
           },
         },
         { status: 402 },
@@ -213,10 +209,10 @@ export async function POST(
           let fullAnswer = "";
           let usageMetadata:
             | {
-              promptTokenCount?: number;
-              candidatesTokenCount?: number;
-              totalTokenCount?: number;
-            }
+                promptTokenCount?: number;
+                candidatesTokenCount?: number;
+                totalTokenCount?: number;
+              }
             | undefined;
 
           for await (const chunk of stream) {
@@ -292,7 +288,7 @@ export async function POST(
                     documentId: document._id,
                     creditsUsed: creditsDeducted,
                     creditsRemaining: newBalance,
-                    lowBalance, // frontend shows warning banner when true
+                    lowBalance,
                   },
                 }),
               ),

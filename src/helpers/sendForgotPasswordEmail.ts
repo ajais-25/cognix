@@ -9,14 +9,12 @@ export async function sendForgotPasswordEmail(
   try {
     const resend = getResendClient();
 
-    const { data, error } = await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: "onboarding@resend.dev",
       to: email,
       subject: "Cognix | Reset Password",
       react: ForgotPasswordEmail({ resetLink, expiryTime }),
     });
-
-    // console.log("Email Data: ", data);
 
     if (error) {
       return { success: false, message: "Error sending password reset email" };
