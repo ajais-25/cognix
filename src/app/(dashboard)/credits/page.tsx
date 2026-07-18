@@ -45,7 +45,7 @@ function TxnDescription({ txn }: { txn: CreditTransaction }) {
 }
 
 export default function CreditsPage() {
-  const { isLoggedIn, isLoading: authLoading, user } = useAuth();
+  const { isLoggedIn, isLoading: authLoading, user, setCredits } = useAuth();
   const [data, setData] = useState<CreditsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -87,12 +87,15 @@ export default function CreditsPage() {
     axios.get("/api/credits")
       .then((res) => {
         const d = res.data;
-        if (d.success) setData(d.data);
+        if (d.success) {
+          setData(d.data);
+          setCredits(d.data.credits, d.data.lowBalance);
+        }
         else setError(d.message ?? "Failed to load credits");
       })
       .catch((err) => setError(err.response?.data?.message ?? "Network error"))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [setCredits]);
 
   const razorpayHandler = async (amount: number) => {
     setPaying(true);
