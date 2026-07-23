@@ -68,11 +68,35 @@ export async function generateTitleFromChunks(
 export async function embedChunks(
   taggedChunks: Awaited<ReturnType<typeof splitPDF>>,
 ) {
-  await QdrantVectorStore.fromDocuments(taggedChunks, embeddings, {
-    url: process.env.QDRANT_URL!,
-    apiKey: process.env.QDRANT_API_KEY!,
-    collectionName: COLLECTION_NAME,
-  });
+  const firstFewChunks = [...taggedChunks]
+    .sort((a, b) => a.metadata.chunkIndex - b.metadata.chunkIndex)
+    .slice(0, 3);
+
+  const title = await generateTitleFromChunks(firstFewChunks);
+  const vectorStore = await getVectorStore();
+
+  const prefixedChunks = taggedChunks.map(
+    (chunk) => `title: ${title} | text: ${chunk.pageContent}`,
+  );
+
+  const vectors = await embeddings.embedDocuments(prefixedChunks);
+
+  const hasEmptyVector = vectors.some((v) => v.length === 0);
+
+  if (hasEmptyVector) {
+    throw new Error("One or more embedding vectors returned with 0 dimensions");
+  }
+
+  await vectorStore.addVectors(
+    vectors,
+    taggedChunks.map(
+      (chunk) =>
+        new Document({
+          pageContent: chunk.pageContent,
+          metadata: { ...chunk.metadata, title },
+        }),
+    ),
+  );
 }
 
 // Phase 3 - Retrieve
@@ -89,13 +113,19 @@ export async function retrieveChunks(
   topK: number = 5,
 ): Promise<RetrievedChunk[]> {
   const vectorStore = await getVectorStore();
+  const prefixedQuery = `task: search result | query: ${query}`;
+  const queryVector = await embeddings.embedQuery(prefixedQuery);
 
-  const results = await vectorStore.similaritySearchWithScore(query, topK, {
-    must: [
-      { key: "metadata.documentId", match: { value: documentId } },
-      { key: "metadata.userId", match: { value: userId } },
-    ],
-  });
+  const results = await vectorStore.similaritySearchVectorWithScore(
+    queryVector,
+    topK,
+    {
+      must: [
+        { key: "metadata.documentId", match: { value: documentId } },
+        { key: "metadata.userId", match: { value: userId } },
+      ],
+    },
+  );
 
   return results.map(([doc, score]) => ({
     content: doc.pageContent,
