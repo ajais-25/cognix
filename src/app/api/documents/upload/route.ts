@@ -72,7 +72,6 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const filename = file.name.replaceAll(" ", "_");
-    console.log(filename);
 
     userDocument = await UserDocument.create({
       userId,
@@ -86,6 +85,20 @@ export async function POST(request: NextRequest) {
       userDocument._id.toString(),
       userId,
     );
+
+    if (!taggedChunks || taggedChunks.length === 0) {
+      await UserDocument.findByIdAndDelete(userDocument._id);
+
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Could not extract text from PDF. Please upload a searchable PDF with text content.",
+        },
+        { status: 400 },
+      );
+    }
+
     const totalChunks = taggedChunks.length;
 
     const uploadCost = estimateUploadCost(totalChunks);

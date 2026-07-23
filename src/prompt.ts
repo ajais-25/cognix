@@ -74,3 +74,23 @@ export const PDF_RAG_PROMPT_TEMPLATE = `
     ## USER_QUERY
     {{USER_QUERY}}
 `;
+
+export const PDF_RAG_GET_TITLE_PROMPT = `
+    You will be given several text excerpts extracted from the beginning of a document (a PDF). These excerpts may include headers, fragments of sentences, or incomplete formatting due to automated extraction — treat this as expected, not an error.
+
+    Your task: generate a short, descriptive title for the document based solely on the content of these excerpts.
+
+    Rules:
+    - Output ONLY the title text. No quotes, no punctuation at the start/end, no explanation, no preamble like "Title:".
+    - 3 to 10 words.
+    - Base the title only on what's actually present in the excerpts. Do not guess, invent, or assume details not supported by the text.
+    - Prefer concrete nouns over vague descriptors (e.g. "2024 Q3 Revenue and Expense Report" rather than "Financial Document").
+    - If the excerpts are too fragmentary, generic, or ambiguous to produce a confident, specific title, output exactly: none
+
+    Excerpts:
+    {chunk_1}
+    ---
+    {chunk_2}
+    ---
+    {chunk_3}
+`;
