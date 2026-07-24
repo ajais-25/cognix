@@ -4,6 +4,7 @@ import { embeddings, getVectorStore } from "./vectorStore";
 import { PDF_RAG_GET_TITLE_PROMPT } from "@/prompt";
 import { gemini } from "./gemini";
 import { Document } from "@langchain/core/documents";
+import { CallUsageParam } from "./credits";
 
 // Phase 1 - Split
 export async function splitPDF(
@@ -27,12 +28,16 @@ export async function splitPDF(
   }));
 }
 
-// Get Title
-// assuming the chunks are already sorted by chunkIndex
-export async function generateTitleFromChunks(
+// Get Title with usage metadata tracking
+export async function generateTitleFromChunksWithUsage(
   chunks: Awaited<ReturnType<typeof splitPDF>>,
-  maxChars: number = 3000, // keep prompt small & cheap
-): Promise<string> {
+  maxChars: number = 3000,
+): Promise<{
+  title: string;
+  promptTokens: number;
+  outputTokens: number;
+  thinkingTokens?: number;
+}> {
   try {
     let combined = "";
     for (const chunk of chunks) {
@@ -57,27 +62,56 @@ export async function generateTitleFromChunks(
     const title =
       raw && raw.toLowerCase().replace(/\.$/, "") !== "none" ? raw : "none";
 
-    return title;
+    const usage = result.usageMetadata;
+    const promptTokens =
+      usage?.promptTokenCount ?? Math.ceil(titlePrompt.length / 4);
+    const outputTokens =
+      usage?.candidatesTokenCount ?? Math.ceil((raw?.length ?? 10) / 4);
+    const thinkingTokens = usage?.thoughtsTokenCount;
+
+    return { title, promptTokens, outputTokens, thinkingTokens };
   } catch (error) {
     console.error("Title generation failed, falling back to 'none':", error);
-    return "none";
+    return { title: "none", promptTokens: 750, outputTokens: 5 };
   }
 }
 
-// Phase 2 - Embed
+// Phase 2 - Embed with complete itemized pricing tracking
 export async function embedChunks(
   taggedChunks: Awaited<ReturnType<typeof splitPDF>>,
-) {
+): Promise<{
+  title: string;
+  itemizedCalls: CallUsageParam[];
+}> {
   const firstFewChunks = [...taggedChunks]
     .sort((a, b) => a.metadata.chunkIndex - b.metadata.chunkIndex)
     .slice(0, 3);
 
-  const title = await generateTitleFromChunks(firstFewChunks);
+  const titleResult = await generateTitleFromChunksWithUsage(firstFewChunks);
+  const title = titleResult.title;
+
   const vectorStore = await getVectorStore();
 
   const prefixedChunks = taggedChunks.map(
     (chunk) => `title: ${title} | text: ${chunk.pageContent}`,
   );
+
+  // Measure embedding tokens accurately
+  let totalEmbeddingTokens = 0;
+  try {
+    const tokenCountRes = await gemini.models.countTokens({
+      model: "gemini-embedding-2",
+      contents: prefixedChunks.join("\n"),
+    });
+    totalEmbeddingTokens = tokenCountRes.totalTokens ?? 0;
+  } catch (err) {
+    console.warn("Failed to count embedding tokens via API, estimating:", err);
+  }
+
+  if (!totalEmbeddingTokens || totalEmbeddingTokens === 0) {
+    const totalChars = prefixedChunks.reduce((acc, str) => acc + str.length, 0);
+    totalEmbeddingTokens = Math.max(10, Math.ceil(totalChars / 4));
+  }
 
   const vectors = await embeddings.embedDocuments(prefixedChunks);
 
@@ -97,9 +131,27 @@ export async function embedChunks(
         }),
     ),
   );
+
+  const itemizedCalls: CallUsageParam[] = [
+    {
+      callType: "pdf_title_generation",
+      model: "gemini-2.5-flash-lite",
+      promptTokens: titleResult.promptTokens,
+      outputTokens: titleResult.outputTokens,
+      thinkingTokens: titleResult.thinkingTokens,
+    },
+    {
+      callType: "pdf_chunk_embeddings",
+      model: "gemini-embedding-2",
+      promptTokens: totalEmbeddingTokens,
+      outputTokens: 0,
+    },
+  ];
+
+  return { title, itemizedCalls };
 }
 
-// Phase 3 - Retrieve
+// Phase 3 - Retrieve with query embedding token count tracking
 interface RetrievedChunk {
   content: string;
   score: number;
@@ -111,12 +163,29 @@ export async function retrieveChunks(
   documentId: string,
   userId: string,
   topK: number = 5,
-): Promise<RetrievedChunk[]> {
+): Promise<{
+  results: RetrievedChunk[];
+  queryEmbeddingTokens: number;
+}> {
   const vectorStore = await getVectorStore();
   const prefixedQuery = `task: search result | query: ${query}`;
+
+  let queryEmbeddingTokens = Math.max(5, Math.ceil(prefixedQuery.length / 4));
+  try {
+    const tokenRes = await gemini.models.countTokens({
+      model: "gemini-embedding-2",
+      contents: prefixedQuery,
+    });
+    if (tokenRes.totalTokens) {
+      queryEmbeddingTokens = tokenRes.totalTokens;
+    }
+  } catch (err) {
+    console.warn("Failed to count query embedding tokens via API:", err);
+  }
+
   const queryVector = await embeddings.embedQuery(prefixedQuery);
 
-  const results = await vectorStore.similaritySearchVectorWithScore(
+  const rawResults = await vectorStore.similaritySearchVectorWithScore(
     queryVector,
     topK,
     {
@@ -127,9 +196,11 @@ export async function retrieveChunks(
     },
   );
 
-  return results.map(([doc, score]) => ({
+  const results = rawResults.map(([doc, score]) => ({
     content: doc.pageContent,
     score,
     chunkIndex: doc.metadata.chunkIndex,
   }));
+
+  return { results, queryEmbeddingTokens };
 }

@@ -1,10 +1,23 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
-interface CreditTransaction extends Document {
+export interface ItemizedCallRecord {
+  callType: string;
+  model: string;
+  promptTokens: number;
+  outputTokens: number;
+  thinkingTokens?: number;
+  baseCostUsd: number;
+  billedUsd: number;
+}
+
+export interface CreditTransaction extends Document {
   userId: Types.ObjectId;
-  amount: number;
+  amount: number; // USD billed amount
   type: "topup" | "deduction" | "refund" | "bonus";
   balanceAfter: number;
+  baseCostUsd?: number;
+  marginPercent?: number;
+  breakdown?: ItemizedCallRecord[];
   tokenMeta?: {
     promptTokens: number;
     outputTokens: number;
@@ -12,7 +25,7 @@ interface CreditTransaction extends Document {
   };
   uploadMeta?: {
     totalChunks: number;
-    creditsPerChunk: number;
+    totalTokens?: number;
   };
   referenceId?: Types.ObjectId; // conversationId or documentId
   createdAt: Date;
@@ -39,6 +52,23 @@ const creditTransactionSchema: Schema<CreditTransaction> = new Schema(
       type: Number,
       required: true,
     },
+    baseCostUsd: {
+      type: Number,
+    },
+    marginPercent: {
+      type: Number,
+    },
+    breakdown: [
+      {
+        callType: { type: String, required: true },
+        model: { type: String, required: true },
+        promptTokens: { type: Number, required: true },
+        outputTokens: { type: Number, required: true },
+        thinkingTokens: { type: Number },
+        baseCostUsd: { type: Number, required: true },
+        billedUsd: { type: Number, required: true },
+      },
+    ],
     tokenMeta: {
       type: {
         promptTokens: {
@@ -61,9 +91,8 @@ const creditTransactionSchema: Schema<CreditTransaction> = new Schema(
           type: Number,
           required: true,
         },
-        creditsPerChunk: {
+        totalTokens: {
           type: Number,
-          required: true,
         },
       },
     },

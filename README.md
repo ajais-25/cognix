@@ -20,6 +20,7 @@ Ask anything with real-time web search, or upload a PDF and chat with it using R
 ## ✨ Features
 
 ### 💬 AI Chat with Web Search
+
 - Real-time conversations powered by **Google Gemini**
 - Intelligent web search integration via **Tavily** — the AI decides when a web search is needed
 - Streaming responses with markdown rendering and syntax highlighting
@@ -27,24 +28,28 @@ Ask anything with real-time web search, or upload a PDF and chat with it using R
 - Full conversation history with sidebar navigation
 
 ### 📄 Document Intelligence (RAG)
+
 - Upload PDFs and **chat with your documents**
 - RAG pipeline: split → embed → retrieve → answer
 - Powered by **LangChain**, **Google Gemini Embeddings**, and **Qdrant** vector database
 - Answers grounded in document context with source attribution
 
 ### 💳 Credits & Payments
+
 - Token-based credit system with transparent usage tracking
 - Credit top-ups via **Razorpay** payment gateway
 - Detailed transaction history (queries, uploads, top-ups, refunds)
 - Low-balance warnings and pre-flight cost estimation
 
 ### 🔐 Authentication & Security
+
 - Full auth flow: sign up → email verification → sign in
 - Password reset via email (forgot password → OTP → reset)
 - JWT-based sessions with HTTP-only cookies
 - Middleware-level route protection
 
 ### 🎨 UI/UX
+
 - Light & dark theme with system preference detection
 - Responsive layout with collapsible sidebar
 - Skeleton loading states throughout
@@ -76,7 +81,7 @@ Ask anything with real-time web search, or upload a PDF and chat with it using R
 
 ### Prerequisites
 
-- **Node.js** 18+ 
+- **Node.js** 18+
 - **MongoDB** instance (local or Atlas)
 - **Qdrant** vector database instance
 - API keys for: Gemini, Tavily, Resend, Razorpay
@@ -126,11 +131,9 @@ RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 RAZORPAY_WEBHOOK_SECRET=your_razorpay_webhook_secret
 
 # ── Credits Configuration ──
-CREDITS_PER_1K_TOKENS=1
-CREDITS_PER_CHUNK=0.5
-LOW_BALANCE_THRESHOLD=10
-OUTPUT_BUFFER_TOKENS=500
-CREDITS_PER_RUPEE=10
+PROFIT_MARGIN_PERCENT=your_profit_margin_percentage
+MINIMUM_REQUIRED_BALANCE=0.001
+LOW_BALANCE_THRESHOLD=0.05
 ```
 
 ### 4. Run the development server

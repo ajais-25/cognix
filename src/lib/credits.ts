@@ -1,47 +1,78 @@
-import CreditTransaction from "@/models/CreditTransaction";
+import CreditTransaction, {
+  ItemizedCallRecord,
+} from "@/models/CreditTransaction";
 import User from "@/models/User";
+import { calculateTokenCostUsd, getProfitMarginPercent } from "./pricingConfig";
 
-const CREDITS_PER_1K_TOKENS = Number(process.env.CREDITS_PER_1K_TOKENS!);
-const CREDITS_PER_CHUNK = Number(process.env.CREDITS_PER_CHUNK!);
+export const MINIMUM_REQUIRED_BALANCE = Number(
+  process.env.MINIMUM_REQUIRED_BALANCE!,
+);
+
 const LOW_BALANCE_THRESHOLD = Number(process.env.LOW_BALANCE_THRESHOLD!);
-const OUTPUT_BUFFER_TOKENS = Number(process.env.OUTPUT_BUFFER_TOKENS!); // assumed max output for pre-flight estimate
 
 export function isLowBalance(credits: number): boolean {
   return credits <= LOW_BALANCE_THRESHOLD;
 }
 
-export function estimateQueryCost(inputTokens: number): number {
-  return parseFloat(
-    (
-      ((inputTokens + OUTPUT_BUFFER_TOKENS) / 1000) *
-      CREDITS_PER_1K_TOKENS
-    ).toFixed(2),
-  );
+export function hasSufficientBalance(
+  credits: number,
+  minBalance: number = MINIMUM_REQUIRED_BALANCE,
+): boolean {
+  return credits >= minBalance;
 }
 
-export function estimateUploadCost(totalChunks: number): number {
-  return totalChunks * CREDITS_PER_CHUNK;
+export interface CallUsageParam {
+  callType: string;
+  model: string;
+  promptTokens: number;
+  outputTokens: number;
+  thinkingTokens?: number;
 }
 
+/**
+ * Deducts USD credits after an AI query execution based on actual itemized token usages.
+ */
 export async function deductQueryCredits(params: {
   userId: string;
   balance: number;
-  tokenMeta: {
-    promptTokens: number;
-    outputTokens: number;
-    totalTokens: number;
-  };
+  itemizedCalls: CallUsageParam[];
   referenceId?: string;
 }): Promise<{
   creditsDeducted: number;
   newBalance: number;
   lowBalance: boolean;
 }> {
-  const rawCost = parseFloat(
-    ((params.tokenMeta.totalTokens / 1000) * CREDITS_PER_1K_TOKENS).toFixed(2),
+  let totalBaseCostUsd = 0;
+  let totalBilledUsd = 0;
+
+  const breakdownRecords: ItemizedCallRecord[] = params.itemizedCalls.map(
+    (call) => {
+      const pricing = calculateTokenCostUsd(
+        call.model,
+        call.promptTokens,
+        call.outputTokens,
+      );
+      totalBaseCostUsd += pricing.baseCostUsd;
+      totalBilledUsd += pricing.billedCostUsd;
+
+      return {
+        callType: call.callType,
+        model: call.model,
+        promptTokens: call.promptTokens,
+        outputTokens: call.outputTokens,
+        thinkingTokens: call.thinkingTokens,
+        baseCostUsd: pricing.baseCostUsd,
+        billedUsd: pricing.billedCostUsd,
+      };
+    },
   );
+
+  totalBaseCostUsd = parseFloat(totalBaseCostUsd.toFixed(8));
+  totalBilledUsd = parseFloat(totalBilledUsd.toFixed(6));
+
+  // Cap deduction at current balance so balance never drops below 0 cleanly
   const creditsDeducted = parseFloat(
-    Math.min(rawCost, params.balance).toFixed(2),
+    Math.min(totalBilledUsd, Math.max(0, params.balance)).toFixed(6),
   );
 
   const updatedUser = await User.findByIdAndUpdate(
@@ -57,7 +88,16 @@ export async function deductQueryCredits(params: {
   }
 
   const newBalance = parseFloat(
-    (updatedUser?.credits ?? params.balance - creditsDeducted).toFixed(2),
+    (updatedUser?.credits ?? params.balance - creditsDeducted).toFixed(6),
+  );
+
+  const promptTokensSum = params.itemizedCalls.reduce(
+    (acc, c) => acc + c.promptTokens,
+    0,
+  );
+  const outputTokensSum = params.itemizedCalls.reduce(
+    (acc, c) => acc + c.outputTokens,
+    0,
   );
 
   await CreditTransaction.create({
@@ -65,16 +105,27 @@ export async function deductQueryCredits(params: {
     amount: -creditsDeducted,
     type: "deduction",
     balanceAfter: newBalance,
-    tokenMeta: params.tokenMeta,
+    baseCostUsd: totalBaseCostUsd,
+    marginPercent: getProfitMarginPercent(),
+    breakdown: breakdownRecords,
+    tokenMeta: {
+      promptTokens: promptTokensSum,
+      outputTokens: outputTokensSum,
+      totalTokens: promptTokensSum + outputTokensSum,
+    },
     referenceId: params.referenceId,
   });
 
   return { creditsDeducted, newBalance, lowBalance: isLowBalance(newBalance) };
 }
 
+/**
+ * Deducts USD credits after a PDF document upload execution based on actual token usages.
+ */
 export async function deductUploadCredits(params: {
   userId: string;
   balance: number;
+  itemizedCalls: CallUsageParam[];
   totalChunks: number;
   referenceId?: string;
 }): Promise<{
@@ -82,9 +133,36 @@ export async function deductUploadCredits(params: {
   newBalance: number;
   lowBalance: boolean;
 }> {
-  const rawCost = params.totalChunks * CREDITS_PER_CHUNK;
+  let totalBaseCostUsd = 0;
+  let totalBilledUsd = 0;
+
+  const breakdownRecords: ItemizedCallRecord[] = params.itemizedCalls.map(
+    (call) => {
+      const pricing = calculateTokenCostUsd(
+        call.model,
+        call.promptTokens,
+        call.outputTokens,
+      );
+      totalBaseCostUsd += pricing.baseCostUsd;
+      totalBilledUsd += pricing.billedCostUsd;
+
+      return {
+        callType: call.callType,
+        model: call.model,
+        promptTokens: call.promptTokens,
+        outputTokens: call.outputTokens,
+        thinkingTokens: call.thinkingTokens,
+        baseCostUsd: pricing.baseCostUsd,
+        billedUsd: pricing.billedCostUsd,
+      };
+    },
+  );
+
+  totalBaseCostUsd = parseFloat(totalBaseCostUsd.toFixed(8));
+  totalBilledUsd = parseFloat(totalBilledUsd.toFixed(6));
+
   const creditsDeducted = parseFloat(
-    Math.min(rawCost, params.balance).toFixed(2),
+    Math.min(totalBilledUsd, Math.max(0, params.balance)).toFixed(6),
   );
 
   const updatedUser = await User.findByIdAndUpdate(
@@ -100,7 +178,12 @@ export async function deductUploadCredits(params: {
   }
 
   const newBalance = parseFloat(
-    (updatedUser?.credits ?? params.balance - creditsDeducted).toFixed(2),
+    (updatedUser?.credits ?? params.balance - creditsDeducted).toFixed(6),
+  );
+
+  const totalTokensSum = params.itemizedCalls.reduce(
+    (acc, c) => acc + c.promptTokens + c.outputTokens,
+    0,
   );
 
   await CreditTransaction.create({
@@ -108,9 +191,12 @@ export async function deductUploadCredits(params: {
     amount: -creditsDeducted,
     type: "deduction",
     balanceAfter: newBalance,
+    baseCostUsd: totalBaseCostUsd,
+    marginPercent: getProfitMarginPercent(),
+    breakdown: breakdownRecords,
     uploadMeta: {
       totalChunks: params.totalChunks,
-      creditsPerChunk: CREDITS_PER_CHUNK,
+      totalTokens: totalTokensSum,
     },
     referenceId: params.referenceId,
   });

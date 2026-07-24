@@ -1,5 +1,9 @@
 import { getDataFromToken } from "@/helpers/getDataFromToken";
-import { deductQueryCredits, estimateQueryCost } from "@/lib/credits";
+import {
+  CallUsageParam,
+  deductQueryCredits,
+  MINIMUM_REQUIRED_BALANCE,
+} from "@/lib/credits";
 import dbConnect from "@/lib/dbConnect";
 import { gemini } from "@/lib/gemini";
 import { retrieveChunks } from "@/lib/rag";
@@ -132,6 +136,25 @@ export async function POST(
       );
     }
 
+    const freshUser = await User.findById(userId).select("credits").lean();
+    const currentCredits =
+      (freshUser as { credits?: number } | null)?.credits ?? user.credits;
+
+    if (currentCredits < MINIMUM_REQUIRED_BALANCE) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Insufficient credits to complete this query. Please top up.",
+          data: {
+            creditsRemaining: parseFloat(currentCredits.toFixed(4)),
+            minimumRequiredUsd: MINIMUM_REQUIRED_BALANCE,
+          },
+        },
+        { status: 402 },
+      );
+    }
+
     let chatHistory: { role: "user" | "model"; content: string }[] = [];
     if (conversationId) {
       const previousMessages = await Message.find({ conversationId })
@@ -141,7 +164,7 @@ export async function POST(
       chatHistory = previousMessages;
     }
 
-    const results = await retrieveChunks(
+    const { results, queryEmbeddingTokens } = await retrieveChunks(
       query,
       document._id.toString(),
       userId,
@@ -163,34 +186,13 @@ export async function POST(
     ];
 
     const { totalTokens: inputTokens } = await gemini.models.countTokens({
-      model: "gemini-2.5-flash-lite",
+      model: "gemini-3.5-flash-lite",
       contents,
     });
 
-    const estimatedCost = estimateQueryCost(inputTokens ?? 0);
-
-    const freshUser = await User.findById(userId).select("credits").lean();
-    const currentCredits =
-      (freshUser as { credits?: number } | null)?.credits ?? user.credits;
-
-    if (currentCredits < estimatedCost) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Insufficient credits to complete this query. Please top up.",
-          data: {
-            creditsRemaining: currentCredits,
-            estimatedCost: estimatedCost,
-          },
-        },
-        { status: 402 },
-      );
-    }
-
-    // Stream the answer as plain text (no JSON schema)
+    // Stream the answer using gemini-3.5-flash-lite
     const stream = await gemini.models.generateContentStream({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.5-flash-lite",
       contents,
       config: {
         systemInstruction: PDF_RAG_SYSTEM_PROMPT,
@@ -198,20 +200,18 @@ export async function POST(
     });
 
     const encoder = new TextEncoder();
-
-    // Helper to send an SSE event
     const sse = (data: string) => encoder.encode(`data: ${data}\n\n`);
 
     const readable = new ReadableStream({
       async start(controller) {
         try {
-          // 1. Stream answer chunks as plain text
           let fullAnswer = "";
-          let usageMetadata:
+          let mainStreamUsageMetadata:
             | {
                 promptTokenCount?: number;
                 candidatesTokenCount?: number;
                 totalTokenCount?: number;
+                thoughtsTokenCount?: number;
               }
             | undefined;
 
@@ -225,17 +225,10 @@ export async function POST(
             }
 
             if (chunk.usageMetadata) {
-              usageMetadata = chunk.usageMetadata;
+              mainStreamUsageMetadata = chunk.usageMetadata;
             }
           }
 
-          if (!usageMetadata) {
-            console.warn(
-              "[document/ask] usageMetadata missing from Gemini stream — 0 credits will be deducted",
-            );
-          }
-
-          // 2. Save conversation and messages to DB
           let convId = conversationId;
           try {
             if (!convId) {
@@ -260,32 +253,41 @@ export async function POST(
                 content: fullAnswer,
               },
             ]);
-          } catch (dbError) {
-            console.error("Failed to save messages to DB:", dbError);
-          }
 
-          // 3. Deduct credits - kept in a separate try/catch so any failure is reported to the client via SSE rather than silently dropped
-          try {
+            const itemizedCalls: CallUsageParam[] = [
+              {
+                callType: "document_query_embedding",
+                model: "gemini-embedding-2",
+                promptTokens: queryEmbeddingTokens,
+                outputTokens: 0,
+              },
+              {
+                callType: "document_answer_stream",
+                model: "gemini-3.5-flash-lite",
+                promptTokens:
+                  mainStreamUsageMetadata?.promptTokenCount ?? inputTokens ?? 0,
+                outputTokens:
+                  mainStreamUsageMetadata?.candidatesTokenCount ??
+                  Math.ceil(fullAnswer.length / 4),
+                thinkingTokens: mainStreamUsageMetadata?.thoughtsTokenCount,
+              },
+            ];
+
             const { creditsDeducted, newBalance, lowBalance } =
               await deductQueryCredits({
                 userId,
                 balance: currentCredits,
-                tokenMeta: {
-                  promptTokens: usageMetadata?.promptTokenCount ?? 0,
-                  outputTokens: usageMetadata?.candidatesTokenCount ?? 0,
-                  totalTokens: usageMetadata?.totalTokenCount ?? 0,
-                },
+                itemizedCalls,
                 referenceId: convId?.toString(),
               });
 
-            // Send metadata so the client can continue this chat
+            // Send metadata so client can update UI
             controller.enqueue(
               sse(
                 JSON.stringify({
                   type: "meta",
                   data: {
                     conversationId: convId,
-                    documentId: document._id,
                     creditsUsed: creditsDeducted,
                     creditsRemaining: newBalance,
                     lowBalance,
@@ -293,22 +295,10 @@ export async function POST(
                 }),
               ),
             );
-          } catch (deductError) {
-            console.error("Failed to deduct credits:", deductError);
-            controller.enqueue(
-              sse(
-                JSON.stringify({
-                  type: "error",
-                  data: {
-                    message:
-                      "Answer generated but credit deduction failed. Please contact support.",
-                  },
-                }),
-              ),
-            );
+          } catch (dbError) {
+            console.error("Failed to save to DB:", dbError);
           }
 
-          // 4. Signal stream end
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
         } catch (err) {
@@ -329,7 +319,7 @@ export async function POST(
     return NextResponse.json(
       {
         success: false,
-        message: "Error occured while asking from document",
+        message: "Error occurred while processing request",
       },
       { status: 500 },
     );

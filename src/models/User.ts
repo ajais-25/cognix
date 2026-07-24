@@ -36,7 +36,7 @@ const userSchema: Schema<User> = new Schema(
     credits: {
       type: Number,
       required: true,
-      default: 200,
+      default: 1,
       min: 0,
     },
     verifyCode: String,

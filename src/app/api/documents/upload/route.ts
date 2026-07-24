@@ -1,5 +1,5 @@
 import { getDataFromToken } from "@/helpers/getDataFromToken";
-import { deductUploadCredits, estimateUploadCost } from "@/lib/credits";
+import { deductUploadCredits, MINIMUM_REQUIRED_BALANCE } from "@/lib/credits";
 import dbConnect from "@/lib/dbConnect";
 import { embedChunks, splitPDF } from "@/lib/rag";
 import User from "@/models/User";
@@ -37,7 +37,6 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.formData();
-
     const file = formData.get("file") as File;
 
     if (!file) {
@@ -73,13 +72,31 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const filename = file.name.replaceAll(" ", "_");
 
+    const freshUser = await User.findById(userId).select("credits").lean();
+    const currentCredits =
+      (freshUser as { credits?: number } | null)?.credits ?? user.credits;
+
+    if (currentCredits < MINIMUM_REQUIRED_BALANCE) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Insufficient credits to process document upload. Please top up.`,
+          data: {
+            creditsRemaining: parseFloat(currentCredits.toFixed(4)),
+            minimumRequiredUsd: MINIMUM_REQUIRED_BALANCE,
+          },
+        },
+        { status: 402 },
+      );
+    }
+
     userDocument = await UserDocument.create({
       userId,
       fileName: filename,
       fileSize: file.size,
     });
 
-    // Split
+    // Split PDF
     const taggedChunks = await splitPDF(
       buffer,
       userDocument._id.toString(),
@@ -101,31 +118,8 @@ export async function POST(request: NextRequest) {
 
     const totalChunks = taggedChunks.length;
 
-    const uploadCost = estimateUploadCost(totalChunks);
-
-    const freshUser = await User.findById(userId).select("credits").lean();
-    const currentCredits =
-      (freshUser as { credits?: number } | null)?.credits ?? user.credits;
-
-    if (currentCredits < uploadCost) {
-      // Clean up the document record
-      await UserDocument.findByIdAndDelete(userDocument._id);
-
-      return NextResponse.json(
-        {
-          success: false,
-          message: `Insufficient credits. This document requires ${uploadCost} credits.`,
-          data: {
-            creditsRemaining: currentCredits,
-            uploadCost,
-          },
-        },
-        { status: 402 },
-      );
-    }
-
-    // Embedding
-    await embedChunks(taggedChunks);
+    // Embedding & title generation
+    const { title, itemizedCalls } = await embedChunks(taggedChunks);
 
     // Update document with total chunks and status
     userDocument.totalChunks = totalChunks;
@@ -136,6 +130,7 @@ export async function POST(request: NextRequest) {
       await deductUploadCredits({
         userId,
         balance: currentCredits,
+        itemizedCalls,
         totalChunks,
         referenceId: userDocument._id.toString(),
       });
@@ -147,6 +142,7 @@ export async function POST(request: NextRequest) {
         data: {
           documentId: userDocument._id,
           fileName: userDocument.fileName,
+          title,
           totalChunks,
           status: userDocument.status,
           creditsUsed: creditsDeducted,
@@ -158,15 +154,17 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.log("Error in /api/documents/upload:", error);
-
-    await UserDocument.findByIdAndUpdate(userDocument?._id, {
-      status: "failed",
-    });
-
+    if (userDocument?._id) {
+      try {
+        await UserDocument.findByIdAndDelete(userDocument._id);
+      } catch (cleanupErr) {
+        console.error("Cleanup failed:", cleanupErr);
+      }
+    }
     return NextResponse.json(
       {
         success: false,
-        message: "Error occured while uploading document",
+        message: "Failed to process document upload",
       },
       { status: 500 },
     );

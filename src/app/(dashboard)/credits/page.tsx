@@ -5,6 +5,7 @@ import Link from "next/link";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
+import { formatUsd } from "@/lib/pricingConfig";
 
 interface TokenMeta {
   promptTokens: number;
@@ -61,8 +62,7 @@ function TxnDescription({ txn }: { txn: CreditTransaction }) {
   if (txn.type === "deduction" && txn.uploadMeta)
     return (
       <span className="txn-desc">
-        PDF upload · {txn.uploadMeta.totalChunks} chunks ×{" "}
-        {txn.uploadMeta.creditsPerChunk} cr
+        PDF upload · {txn.uploadMeta.totalChunks} chunks
       </span>
     );
   if (txn.type === "deduction" && txn.tokenMeta)
@@ -249,9 +249,9 @@ export default function CreditsPage() {
               <div className="credit-balance-left">
                 <span className="credit-balance-label">Current Balance</span>
                 <span className="credit-balance-amount">
-                  {(data?.credits ?? 0).toFixed(2)}
+                  {formatUsd(data?.credits ?? 0)}
                 </span>
-                <span className="credit-balance-unit">credits</span>
+                <span className="credit-balance-unit">USD</span>
               </div>
               <div className="credit-balance-right">
                 {data?.lowBalance && (
@@ -305,10 +305,10 @@ export default function CreditsPage() {
                       <div className="txn-right">
                         <span className={`txn-amount ${typeClass[txn.type]}`}>
                           {txn.type === "deduction" ? "−" : "+"}
-                          {Math.abs(txn.amount).toFixed(2)}
+                          {formatUsd(Math.abs(txn.amount))}
                         </span>
                         <span className="txn-balance-after">
-                          Bal: {txn.balanceAfter.toFixed(2)}
+                          Bal: {formatUsd(txn.balanceAfter ?? 0)}
                         </span>
                       </div>
                     </div>
