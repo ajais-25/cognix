@@ -165,7 +165,7 @@ export default function ChatArea({
               height="36"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="currentColor"
+              stroke="var(--accent)"
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"

@@ -79,7 +79,7 @@ export default function Navbar({ onNewChat }: NavbarProps) {
             height="22"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="currentColor"
+            stroke="var(--accent)"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
