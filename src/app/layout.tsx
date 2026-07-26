@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cognix — AI Chat & Document Intelligence",
+  title: "Cognix - AI Chat & Document Intelligence",
   description:
     "Ask anything with real-time web search, or upload a PDF and chat with it using RAG-powered document intelligence.",
 };
@@ -58,4 +58,3 @@ export default function RootLayout({
     </html>
   );
 }
-
