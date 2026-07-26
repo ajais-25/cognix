@@ -3293,3 +3293,15 @@ nav.navbar .navbar-right {
     font-size: 18px;
   }
 }
+
+/* ─── KaTeX Math Formatting ───────────────────────────────────── */
+.message-markdown .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 0;
+  margin: 14px 0;
+}
+
+.message-markdown .katex {
+  font-size: 1.05em;
+}

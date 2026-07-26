@@ -3,11 +3,21 @@
 import { useState, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { StreamingMessage } from "@/lib/types";
 import SourceCard from "./SourceCard";
 import FollowUpChips from "./FollowUpChips";
+
+function preprocessLaTeX(content: string): string {
+  if (!content) return "";
+  return content
+    .replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => `\n$$\n${math.trim()}\n$$\n`)
+    .replace(/\\\(([\s\S]*?)\\\)/g, (_, math) => `$${math.trim()}$`);
+}
 
 /* ── Copy button with feedback ─────────────────────────────────── */
 function CopyButton({ text }: { text: string }) {
@@ -190,10 +200,11 @@ export default function MessageBubble({
             {/* Markdown content */}
             <div className="message-markdown">
               <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeKatex]}
                 components={markdownComponents}
               >
-                {message.content}
+                {preprocessLaTeX(message.content)}
               </ReactMarkdown>
               {message.isStreaming && (
                 <span className="streaming-cursor" aria-hidden="true" />
