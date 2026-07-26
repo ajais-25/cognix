@@ -45,11 +45,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (amount < 100) {
+    if (amount < 5) {
       return NextResponse.json(
         {
           success: false,
-          message: "Minimum amount is 100",
+          message: "Minimum amount is $5",
         },
         { status: 400 },
       );
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     const order = await razorpay.orders.create({
       amount: Math.round(amount * 100),
-      currency: "INR",
+      currency: "USD",
       receipt: `receipt-${Date.now()}`,
       notes: {
         userId: userId.toString(),

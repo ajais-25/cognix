@@ -32,8 +32,8 @@ interface CreditsData {
   transactions: CreditTransaction[];
 }
 
-const MIN_AMOUNT = 100;
-const QUICK_AMOUNTS = [100, 250, 500, 1000];
+const MIN_AMOUNT = 5;
+const QUICK_AMOUNTS = [5, 10, 25, 50];
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -175,7 +175,7 @@ export default function CreditsPage() {
   const handlePayNow = () => {
     const numAmount = Number(amount);
     if (!amount || isNaN(numAmount) || numAmount < MIN_AMOUNT) {
-      setAmountError(`Minimum amount is ₹${MIN_AMOUNT}`);
+      setAmountError(`Minimum amount is $${MIN_AMOUNT}`);
       return;
     }
     setAmountError("");
@@ -371,18 +371,18 @@ export default function CreditsPage() {
             {/* Amount input */}
             <div className="acm-body">
               <label className="acm-label" htmlFor="acm-amount-input">
-                Enter amount (₹)
+                Enter amount ($)
               </label>
               <div
                 className={`acm-input-wrap ${amountError ? "acm-input-error" : ""}`}
               >
-                <span className="acm-currency">₹</span>
+                <span className="acm-currency">$</span>
                 <input
                   id="acm-amount-input"
                   type="text"
                   inputMode="numeric"
                   className="acm-input"
-                  placeholder={`Min ₹${MIN_AMOUNT}`}
+                  placeholder={`Min $${MIN_AMOUNT}`}
                   value={amount}
                   onChange={(e) => handleAmountChange(e.target.value)}
                   autoFocus
@@ -401,7 +401,7 @@ export default function CreditsPage() {
                       setAmountError("");
                     }}
                   >
-                    ₹{qa}
+                    ${qa}
                   </button>
                 ))}
               </div>
@@ -437,7 +437,7 @@ export default function CreditsPage() {
                 )}
                 {paying
                   ? "Processing…"
-                  : `Pay Now ${isValidAmount ? `· ₹${numAmount}` : ""}`}
+                  : `Pay Now ${isValidAmount ? `· $${numAmount}` : ""}`}
               </button>
             </div>
           </div>

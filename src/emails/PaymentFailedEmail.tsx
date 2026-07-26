@@ -34,14 +34,16 @@ interface PaymentFailedEmailProps {
 export const PaymentFailedEmail = ({
   userName,
   amount,
-  currency = "INR",
+  currency = "USD",
   orderId,
   retryLink,
 }: PaymentFailedEmailProps) => {
   return (
     <Html>
       <Head />
-      <Preview>Payment failed for your Cognix credit top-up — please try again.</Preview>
+      <Preview>
+        Payment failed for your Cognix credit top-up — please try again.
+      </Preview>
       <Body style={baseStyles.main}>
         <Container style={baseStyles.container}>
           <Header />
@@ -56,7 +58,9 @@ export const PaymentFailedEmail = ({
             <Text style={typography.paragraph}>Hi {userName},</Text>
 
             <Text style={typography.paragraph}>
-              Unfortunately, your payment for credit top-up could not be processed. Don&apos;t worry — you can try again and complete your transaction.
+              Unfortunately, your payment for credit top-up could not be
+              processed. Don&apos;t worry — you can try again and complete your
+              transaction.
             </Text>
 
             <Section style={detailsBox.container}>

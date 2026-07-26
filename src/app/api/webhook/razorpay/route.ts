@@ -45,11 +45,11 @@ export async function POST(request: NextRequest) {
       );
 
       if (order) {
-        const creditsToInc = Math.round(order.amount / 10);
+        const creditsToInc = parseFloat((order.amount / 100).toFixed(2));
         const user = await User.findByIdAndUpdate(
           order.userId,
           { $inc: { credits: creditsToInc } },
-          { returnDocument: "after" }
+          { returnDocument: "after" },
         );
 
         if (user) {
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
             user.name,
             user.email,
             String(order.amount / 100),
-            "INR",
+            "USD",
             order.orderId,
             creditsToInc,
           );
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
             user.name,
             user.email,
             String(order.amount / 100),
-            "INR",
+            "USD",
             order.orderId,
             `${process.env.NEXT_PUBLIC_BASE_URL!}/credits`,
           );

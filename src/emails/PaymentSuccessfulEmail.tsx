@@ -30,14 +30,17 @@ interface PaymentSuccessfulEmailProps {
 export const PaymentSuccessfulEmail = ({
   userName,
   amount,
-  currency = "INR",
+  currency = "USD",
   orderId,
   creditsAdded,
 }: PaymentSuccessfulEmailProps) => {
   return (
     <Html>
       <Head />
-      <Preview>Payment successful — {creditsAdded.toString()} credits have been added to your Cognix account.</Preview>
+      <Preview>
+        Payment successful — {creditsAdded.toString()} credits have been added
+        to your Cognix account.
+      </Preview>
       <Body style={baseStyles.main}>
         <Container style={baseStyles.container}>
           <Header />
