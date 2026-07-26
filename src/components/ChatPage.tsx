@@ -1,25 +1,27 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ChatMode, StreamingMessage, SearchResult } from "@/lib/types";
 import { useChat } from "@/hooks/useChat";
 import { useDocuments } from "@/hooks/useDocuments";
 import { useConversations } from "@/hooks/useConversations";
 import { useAuth } from "@/context/AuthContext";
+import { useSidebar } from "@/context/SidebarContext";
 import ChatArea from "@/components/ChatArea";
 import InputBar from "@/components/InputBar";
 
 export default function ChatPage() {
   const { isLoggedIn, isLoading: authLoading, setCredits } = useAuth();
-  const params = useParams();
+  const { newChatTrigger } = useSidebar();
+  const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const docId = searchParams?.get("doc");
-  const rawConversationId = params?.conversationId;
-  const urlConversationId = Array.isArray(rawConversationId)
-    ? rawConversationId[0]
-    : (rawConversationId as string | undefined);
+
+  const pathParts = (pathname ?? "").split("/");
+  const urlConversationId =
+    pathParts[1] === "chat" && pathParts[2] ? pathParts[2] : undefined;
 
   const [mode, setMode] = useState<ChatMode>({ type: "chat" });
   const [followUpInput, setFollowUpInput] = useState("");
@@ -31,10 +33,13 @@ export default function ChatPage() {
   );
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const chatAreaRef = useRef<HTMLDivElement>(null);
+  const currentLoadingIdRef = useRef<string | null>(null);
+  const prevTriggerRef = useRef(newChatTrigger);
 
   const {
     messages,
     isLoading,
+    conversationId: chatConversationId,
     sendMessage,
     resetChat,
     setConversationId,
@@ -54,9 +59,33 @@ export default function ChatPage() {
     clearUploadState,
   } = useDocuments();
 
+  // Sync newly generated conversation ID from stream with active conversation and URL
+  useEffect(() => {
+    if (chatConversationId && activeConversationId !== chatConversationId) {
+      setActiveConversationId(chatConversationId);
+      router.replace(`/chat/${chatConversationId}`);
+    }
+  }, [chatConversationId, activeConversationId, router]);
+
+  // Handle explicit new chat trigger from navbar logo or sidebar button
+  useEffect(() => {
+    if (prevTriggerRef.current !== newChatTrigger) {
+      prevTriggerRef.current = newChatTrigger;
+      currentLoadingIdRef.current = null;
+      resetChat();
+      setMode({ type: "chat" });
+      setActiveConversationId(null);
+      clearUploadState();
+    }
+  }, [newChatTrigger, resetChat, clearUploadState]);
+
   const handleSelectConversation = useCallback(
     async (id: string, type?: "chat" | "document", documentId?: string) => {
+      currentLoadingIdRef.current = id;
       const data = await loadConversation(id);
+      if (currentLoadingIdRef.current !== id) {
+        return;
+      }
       if (!data) {
         router.push("/chat");
         return;
@@ -89,7 +118,7 @@ export default function ChatPage() {
         setMode({ type: "chat" });
       }
     },
-    [loadConversation, setConversationId, setMessages, documents],
+    [loadConversation, setConversationId, setMessages, documents, router],
   );
 
   useEffect(() => {
@@ -97,11 +126,14 @@ export default function ChatPage() {
       if (urlConversationId !== activeConversationId) {
         handleSelectConversation(urlConversationId);
       }
-    } else if (activeConversationId !== null) {
-      resetChat();
-      setMode({ type: "chat" });
-      setActiveConversationId(null);
-      clearUploadState();
+    } else {
+      currentLoadingIdRef.current = null;
+      if (activeConversationId !== null) {
+        resetChat();
+        setMode({ type: "chat" });
+        setActiveConversationId(null);
+        clearUploadState();
+      }
     }
   }, [
     urlConversationId,

@@ -14,7 +14,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
-  const { mobileOpen, closeMobile } = useSidebar();
+  const { mobileOpen, closeMobile, triggerNewChat } = useSidebar();
 
   const { conversations, isLoading: convsLoading } = useConversations();
 
@@ -32,8 +32,8 @@ export default function DashboardLayout({
 
   const handleNewChat = useCallback(() => {
     router.push("/chat");
-    closeMobile();
-  }, [router, closeMobile]);
+    triggerNewChat();
+  }, [router, triggerNewChat]);
 
   return (
     <div className="app-shell">

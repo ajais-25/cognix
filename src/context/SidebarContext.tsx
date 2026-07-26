@@ -17,6 +17,8 @@ interface SidebarContextValue {
   openMobile: () => void;
   closeMobile: () => void;
   toggleMobile: () => void;
+  newChatTrigger: number;
+  triggerNewChat: () => void;
 }
 
 const SidebarContext = createContext<SidebarContextValue | null>(null);
@@ -24,6 +26,7 @@ const SidebarContext = createContext<SidebarContextValue | null>(null);
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsedState] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [newChatTrigger, setNewChatTrigger] = useState(0);
 
   useEffect(() => {
     const saved = localStorage.getItem("sidebar-collapsed");
@@ -57,6 +60,10 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   const openMobile = useCallback(() => setMobileOpen(true), []);
   const closeMobile = useCallback(() => setMobileOpen(false), []);
   const toggleMobile = useCallback(() => setMobileOpen((p) => !p), []);
+  const triggerNewChat = useCallback(() => {
+    setMobileOpen(false);
+    setNewChatTrigger((prev) => prev + 1);
+  }, []);
 
   return (
     <SidebarContext.Provider
@@ -68,6 +75,8 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
         openMobile,
         closeMobile,
         toggleMobile,
+        newChatTrigger,
+        triggerNewChat,
       }}
     >
       {children}

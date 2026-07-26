@@ -17,7 +17,7 @@ export default function Navbar({ onNewChat }: NavbarProps) {
     useAuth();
   const router = useRouter();
   const { theme, toggle: toggleTheme } = useTheme();
-  const { toggleMobile } = useSidebar();
+  const { toggleMobile, triggerNewChat } = useSidebar();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -47,6 +47,7 @@ export default function Navbar({ onNewChat }: NavbarProps) {
       onNewChat();
     } else {
       router.push("/chat");
+      triggerNewChat();
     }
   };
 
