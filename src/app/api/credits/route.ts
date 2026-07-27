@@ -35,7 +35,9 @@ export async function GET(request: NextRequest) {
 
     const hasLowBalance = isLowBalance(user.credits);
 
-    const transactions = await CreditTransaction.find({ userId });
+    const transactions = await CreditTransaction.find({ userId })
+      .select("-baseCostUsd -marginPercent -breakdown")
+      .sort({ createdAt: -1 });
 
     return NextResponse.json(
       {
