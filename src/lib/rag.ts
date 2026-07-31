@@ -6,6 +6,9 @@ import { gemini } from "./gemini";
 import { Document } from "@langchain/core/documents";
 import { CallUsageParam } from "./credits";
 
+// helper function for inducing delay
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 // Phase 1 - Split
 export async function splitPDF(
   pdfBuffer: Buffer,
@@ -54,7 +57,7 @@ export async function generateTitleFromChunksWithUsage(
     `;
 
     const result = await gemini.models.generateContent({
-      model: "gemini-2.5-flash-lite",
+      model: "gemini-3.5-flash-lite",
       contents: titlePrompt,
     });
 
@@ -113,7 +116,24 @@ export async function embedChunks(
     totalEmbeddingTokens = Math.max(10, Math.ceil(totalChars / 4));
   }
 
-  const vectors = await embeddings.embedDocuments(prefixedChunks);
+  const BATCH_SIZE = 18;
+  const vectors: number[][] = [];
+
+  for (let i = 0; i < prefixedChunks.length; i += BATCH_SIZE) {
+    const batch = prefixedChunks.slice(i, i + BATCH_SIZE);
+
+    const batchVectors = await embeddings.embedDocuments(batch);
+    vectors.push(...batchVectors);
+
+    if (i + BATCH_SIZE < prefixedChunks.length) {
+      console.log(
+        `Embedded ${vectors.length}/${prefixedChunks.length} chunks. Pausing to respect TPM limits...`,
+      );
+
+      // Wait 10 seconds between 18-chunk batches
+      await delay(10_000);
+    }
+  }
 
   const hasEmptyVector = vectors.some((v) => v.length === 0);
 
