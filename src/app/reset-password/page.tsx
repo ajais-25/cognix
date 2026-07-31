@@ -4,6 +4,7 @@ import { useState, FormEvent, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
+import Logo from "@/components/Logo";
 
 function ResetPasswordContent() {
   const router = useRouter();
@@ -67,23 +68,7 @@ function ResetPasswordContent() {
     return (
       <div className="auth-page">
         <div className="auth-card">
-          <div className="auth-logo">
-            <svg
-              width="28"
-              height="28"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
-            </svg>
-            <span>Cognix</span>
-          </div>
+          <Logo size={28} className="auth-logo" href="/" />
           <h1 className="auth-title">Invalid Link</h1>
           <p className="auth-sub" style={{ color: "var(--red)" }}>
             The password reset link is invalid or has expired. Please request a new one.
@@ -101,23 +86,7 @@ function ResetPasswordContent() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <div className="auth-logo">
-          <svg
-            width="28"
-            height="28"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 2L2 7l10 5 10-5-10-5z" />
-            <path d="M2 17l10 5 10-5" />
-            <path d="M2 12l10 5 10-5" />
-          </svg>
-          <span>Cognix</span>
-        </div>
+        <Logo size={28} className="auth-logo" href="/" />
 
         <h1 className="auth-title">Reset password</h1>
         <p className="auth-sub">Enter your new secure password below</p>

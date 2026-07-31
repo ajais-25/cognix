@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, RefObject } from "react";
 import { StreamingMessage, ChatMode } from "@/lib/types";
 import MessageBubble from "./MessageBubble";
+import Logo from "./Logo";
 
 const THINKING_PHRASES = [
   "Pondering...",
@@ -160,20 +161,7 @@ export default function ChatArea({
       ) : isEmpty ? (
         <div className="chat-empty">
           <div className="chat-empty-icon">
-            <svg
-              width="36"
-              height="36"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--accent)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
-            </svg>
+            <Logo size={36} showText={false} />
           </div>
           {mode.type === "document" ? (
             <>
