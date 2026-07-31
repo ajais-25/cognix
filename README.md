@@ -132,8 +132,8 @@ RAZORPAY_WEBHOOK_SECRET=your_razorpay_webhook_secret
 
 # ── Credits Configuration ──
 PROFIT_MARGIN_PERCENT=your_profit_margin_percentage
-MINIMUM_REQUIRED_BALANCE=0.001
-LOW_BALANCE_THRESHOLD=0.05
+MINIMUM_REQUIRED_BALANCE=your_minimum_required_balance
+LOW_BALANCE_THRESHOLD=your_low_balance_threshold
 ```
 
 ### 4. Run the development server
