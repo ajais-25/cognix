@@ -5,10 +5,6 @@ export interface ModelRate {
 }
 
 export const MODEL_RATES: Record<string, ModelRate> = {
-  "gemini-2.5-flash-lite": {
-    inputPer1M: 0.1,
-    outputPer1M: 0.4,
-  },
   "gemini-3.5-flash-lite": {
     inputPer1M: 0.3,
     outputPer1M: 2.5,

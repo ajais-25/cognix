@@ -185,11 +185,6 @@ export async function POST(
       { role: "user" as const, parts: [{ text: currentPrompt }] },
     ];
 
-    const { totalTokens: inputTokens } = await gemini.models.countTokens({
-      model: "gemini-3.5-flash-lite",
-      contents,
-    });
-
     // Stream the answer using gemini-3.5-flash-lite
     const stream = await gemini.models.generateContentStream({
       model: "gemini-3.5-flash-lite",
@@ -264,8 +259,7 @@ export async function POST(
               {
                 callType: "document_answer_stream",
                 model: "gemini-3.5-flash-lite",
-                promptTokens:
-                  mainStreamUsageMetadata?.promptTokenCount ?? inputTokens ?? 0,
+                promptTokens: mainStreamUsageMetadata?.promptTokenCount ?? 0,
                 outputTokens:
                   mainStreamUsageMetadata?.candidatesTokenCount ??
                   Math.ceil(fullAnswer.length / 4),

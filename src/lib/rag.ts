@@ -155,7 +155,7 @@ export async function embedChunks(
   const itemizedCalls: CallUsageParam[] = [
     {
       callType: "pdf_title_generation",
-      model: "gemini-2.5-flash-lite",
+      model: "gemini-3.5-flash-lite",
       promptTokens: titleResult.promptTokens,
       outputTokens: titleResult.outputTokens,
       thinkingTokens: titleResult.thinkingTokens,

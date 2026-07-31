@@ -205,12 +205,6 @@ export async function POST(request: NextRequest) {
       { role: "user" as const, parts: [{ text: currentPrompt }] },
     ];
 
-    const { totalTokens: normalQueryInputTokens } =
-      await gemini.models.countTokens({
-        model: "gemini-3.5-flash-lite",
-        contents,
-      });
-
     const stream = await gemini.models.generateContentStream({
       model: "gemini-3.5-flash-lite",
       contents,
@@ -260,7 +254,7 @@ export async function POST(request: NextRequest) {
           const itemizedCalls: CallUsageParam[] = [
             {
               callType: "web_search_decision",
-              model: "gemini-2.5-flash-lite",
+              model: "gemini-3.5-flash-lite",
               promptTokens: decisionUsage.promptTokens,
               outputTokens: decisionUsage.outputTokens,
               thinkingTokens: decisionUsage.thinkingTokens,
@@ -268,10 +262,7 @@ export async function POST(request: NextRequest) {
             {
               callType: "main_chat_stream",
               model: "gemini-3.5-flash-lite",
-              promptTokens:
-                mainStreamUsageMetadata?.promptTokenCount ??
-                normalQueryInputTokens ??
-                0,
+              promptTokens: mainStreamUsageMetadata?.promptTokenCount ?? 0,
               outputTokens:
                 mainStreamUsageMetadata?.candidatesTokenCount ??
                 Math.ceil(fullAnswer.length / 4),
@@ -288,7 +279,7 @@ export async function POST(request: NextRequest) {
           let followUps: string[] = [];
           try {
             const followUpResponse = await gemini.models.generateContent({
-              model: "gemini-2.5-flash-lite",
+              model: "gemini-3.5-flash-lite",
               contents: followUpPrompt,
               config: {
                 systemInstruction: FOLLOW_UP_SYSTEM_PROMPT,
@@ -300,7 +291,7 @@ export async function POST(request: NextRequest) {
             if (followUpResponse.usageMetadata) {
               itemizedCalls.push({
                 callType: "follow_up_generation",
-                model: "gemini-2.5-flash-lite",
+                model: "gemini-3.5-flash-lite",
                 promptTokens:
                   followUpResponse.usageMetadata.promptTokenCount ?? 300,
                 outputTokens:
