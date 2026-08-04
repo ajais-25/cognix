@@ -32,6 +32,7 @@ export interface CallUsageParam {
 /**
  * Deducts USD credits after an AI query execution based on actual itemized token usages.
  */
+// TODO: fix the balance parameter
 export async function deductQueryCredits(params: {
   userId: string;
   balance: number;
@@ -122,17 +123,14 @@ export async function deductQueryCredits(params: {
 /**
  * Deducts USD credits after a PDF document upload execution based on actual token usages.
  */
+// TODO: fix the balance parameter
 export async function deductUploadCredits(params: {
   userId: string;
   balance: number;
   itemizedCalls: CallUsageParam[];
   totalChunks: number;
   referenceId?: string;
-}): Promise<{
-  creditsDeducted: number;
-  newBalance: number;
-  lowBalance: boolean;
-}> {
+}) {
   let totalBaseCostUsd = 0;
   let totalBilledUsd = 0;
 
@@ -200,6 +198,4 @@ export async function deductUploadCredits(params: {
     },
     referenceId: params.referenceId,
   });
-
-  return { creditsDeducted, newBalance, lowBalance: isLowBalance(newBalance) };
 }

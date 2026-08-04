@@ -2,10 +2,10 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface UserDocument extends Document {
   userId: Types.ObjectId;
+  b2Key: string;
   fileName: string;
   fileSize: number;
-  totalChunks?: number;
-  status: "processing" | "ready" | "failed";
+  status: "pending" | "processing" | "ready" | "failed";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,6 +17,10 @@ const userDocumentSchema: Schema<UserDocument> = new Schema(
       ref: "User",
       required: true,
     },
+    b2Key: {
+      type: String,
+      required: true,
+    },
     fileName: {
       type: String,
       required: true,
@@ -25,14 +29,10 @@ const userDocumentSchema: Schema<UserDocument> = new Schema(
       type: Number,
       required: true,
     },
-    totalChunks: {
-      type: Number,
-      default: 0,
-    },
     status: {
       type: String,
-      enum: ["processing", "ready", "failed"],
-      default: "processing",
+      enum: ["pending", "processing", "ready", "failed"],
+      default: "pending",
     },
   },
   { timestamps: true },
