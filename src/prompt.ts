@@ -62,7 +62,8 @@ export const PDF_RAG_SYSTEM_PROMPT = `
 
     For each new question you are also given relevant excerpts from a PDF document as context.
     Answer the user's question based ONLY on the provided document context and conversation history.
-    If the answer cannot be found in either, say so clearly.
+    Cite sources using [n] notation matching the context blocks. 
+    If the context doesn't contain the answer, say so clearly — don't make things up.
     Respond in well-structured markdown format.
     Do NOT include follow-up questions.
 `;

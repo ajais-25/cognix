@@ -5,13 +5,11 @@ import {
   MINIMUM_REQUIRED_BALANCE,
 } from "@/lib/credits";
 import dbConnect from "@/lib/dbConnect";
-import { gemini } from "@/lib/gemini";
-import { retrieveChunks } from "@/lib/rag";
+import { streamAnswer } from "@/lib/rag";
 import Conversation from "@/models/Conversation";
 import Message from "@/models/Message";
 import User from "@/models/User";
 import UserDocument from "@/models/UserDocument";
-import { PDF_RAG_PROMPT_TEMPLATE, PDF_RAG_SYSTEM_PROMPT } from "@/prompt";
 import { documentAskSchema } from "@/schemas/documentAskSchema";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -44,6 +42,25 @@ export async function POST(
           message: "Unauthorized user",
         },
         { status: 401 },
+      );
+    }
+
+    const freshUser = await User.findById(userId).select("credits").lean();
+    const currentCredits =
+      (freshUser as { credits?: number } | null)?.credits ?? user.credits;
+
+    if (currentCredits < MINIMUM_REQUIRED_BALANCE) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Insufficient credits to complete this query. Please top up.",
+          data: {
+            creditsRemaining: parseFloat(currentCredits.toFixed(4)),
+            minimumRequiredUsd: MINIMUM_REQUIRED_BALANCE,
+          },
+        },
+        { status: 402 },
       );
     }
 
@@ -136,63 +153,12 @@ export async function POST(
       );
     }
 
-    const freshUser = await User.findById(userId).select("credits").lean();
-    const currentCredits =
-      (freshUser as { credits?: number } | null)?.credits ?? user.credits;
-
-    if (currentCredits < MINIMUM_REQUIRED_BALANCE) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Insufficient credits to complete this query. Please top up.",
-          data: {
-            creditsRemaining: parseFloat(currentCredits.toFixed(4)),
-            minimumRequiredUsd: MINIMUM_REQUIRED_BALANCE,
-          },
-        },
-        { status: 402 },
-      );
-    }
-
-    let chatHistory: { role: "user" | "model"; content: string }[] = [];
-    if (conversationId) {
-      const previousMessages = await Message.find({ conversationId })
-        .sort({ createdAt: 1 })
-        .select("role content")
-        .lean<{ role: "user" | "model"; content: string }[]>();
-      chatHistory = previousMessages;
-    }
-
-    const { results, queryEmbeddingTokens } = await retrieveChunks(
-      query,
-      document._id.toString(),
-      userId,
-    );
-
-    const context = results.map((result) => result.content).join("\n\n");
-
-    const currentPrompt = PDF_RAG_PROMPT_TEMPLATE.replace(
-      "{{DOCUMENT_CONTEXT}}",
-      context,
-    ).replace("{{USER_QUERY}}", query);
-
-    const contents = [
-      ...chatHistory.map((m) => ({
-        role: m.role,
-        parts: [{ text: m.content }],
-      })),
-      { role: "user" as const, parts: [{ text: currentPrompt }] },
-    ];
-
     // Stream the answer using gemini-3.5-flash-lite
-    const stream = await gemini.models.generateContentStream({
-      model: "gemini-3.5-flash-lite",
-      contents,
-      config: {
-        systemInstruction: PDF_RAG_SYSTEM_PROMPT,
-      },
-    });
+    const { queryEmbeddingTokens, stream } = await streamAnswer(
+      query,
+      userId,
+      documentId,
+    );
 
     const encoder = new TextEncoder();
     const sse = (data: string) => encoder.encode(`data: ${data}\n\n`);
