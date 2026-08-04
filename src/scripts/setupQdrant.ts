@@ -1,38 +1,61 @@
-import axios from "axios";
+import { qdrant } from "@/lib/qdrant";
 
-const QDRANT_URL = `${process.env.QDRANT_URL!}:6333`;
-const QDRANT_API_KEY = process.env.QDRANT_API_KEY!;
+export const COLLECTION_NAME = "documents";
 
-const headers = {
-  "Content-Type": "application/json",
-  "api-key": QDRANT_API_KEY,
-};
+async function setup() {
+  try {
+    const collections = await qdrant.getCollections();
+    const exists = collections.collections.some(
+      (c) => c.name === COLLECTION_NAME,
+    );
 
-async function createIndexes() {
-  // Index on metadata.documentId
-  await axios.put(
-    `${QDRANT_URL}/collections/document_chunks/index`,
-    {
-      field_name: "metadata.documentId",
-      field_schema: "keyword",
-    },
-    { headers },
-  );
+    if (exists) {
+      console.log(
+        `Collection "${COLLECTION_NAME}" already exists — skipping creation.`,
+      );
+    } else {
+      await qdrant.createCollection(COLLECTION_NAME, {
+        vectors: { size: 3072, distance: "Cosine" },
+      });
+      console.log(`Collection "${COLLECTION_NAME}" created.`);
+    }
+  } catch (err) {
+    console.error("Failed to check/create collection:", err);
+    process.exit(1); // fail loudly — this is a one-time setup script, not a silent-continue context
+  }
 
-  // Index on metadata.userId
-  await axios.put(
-    `${QDRANT_URL}/collections/document_chunks/index`,
-    {
-      field_name: "metadata.userId",
-      field_schema: {
-        type: "keyword",
-        is_tenant: true,
-      },
-    },
-    { headers },
-  );
+  await ensurePayloadIndex(COLLECTION_NAME, "userId", {
+    type: "keyword",
+    is_tenant: true,
+  });
+  await ensurePayloadIndex(COLLECTION_NAME, "documentId", "keyword");
+
+  console.log("Qdrant collection + indexes ready");
 }
 
-createIndexes()
-  .then(() => console.log("Indexes created successfully"))
-  .catch((err) => console.error("Error creating indexes:", err));
+async function ensurePayloadIndex(
+  collection: string,
+  fieldName: string,
+  schema: any,
+) {
+  try {
+    await qdrant.createPayloadIndex(collection, {
+      field_name: fieldName,
+      field_schema: schema,
+    });
+    console.log(`Index created on "${fieldName}".`);
+  } catch (err: any) {
+    const alreadyExists =
+      err?.status === 409 ||
+      err?.data?.status?.error?.includes("already exists");
+
+    if (alreadyExists) {
+      console.log(`Index on "${fieldName}" already exists — skipping.`);
+    } else {
+      console.error(`Failed to create index on "${fieldName}":`, err);
+      process.exit(1);
+    }
+  }
+}
+
+setup();
