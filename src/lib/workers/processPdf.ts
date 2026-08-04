@@ -5,7 +5,6 @@ import { embedChunks } from "../embeddings";
 import { qdrant } from "../qdrant";
 import { getPdfBuffer } from "../storage";
 import { deductUploadCredits } from "../credits";
-import User from "@/models/User";
 
 export async function processPdf(
   userId: string,
@@ -35,14 +34,8 @@ export async function processPdf(
     );
   }
 
-  const freshUser = await User.findById(userId).select("credits");
-  if (!freshUser) {
-    throw new Error(`User "${userId}" not found — cannot deduct credits`);
-  }
-
   await deductUploadCredits({
     userId,
-    balance: freshUser.credits,
     itemizedCalls,
     totalChunks: embeddings.length,
     referenceId: documentId,

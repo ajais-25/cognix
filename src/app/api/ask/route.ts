@@ -347,7 +347,6 @@ export async function POST(request: NextRequest) {
             const { creditsDeducted, newBalance, lowBalance } =
               await deductQueryCredits({
                 userId,
-                balance: currentCredits,
                 itemizedCalls,
                 referenceId: convId?.toString(),
               });
