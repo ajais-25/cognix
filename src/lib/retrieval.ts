@@ -2,6 +2,7 @@ import { qdrant } from "./qdrant";
 import { embedQuery } from "./embeddings";
 import { COLLECTION_NAME } from "@/scripts/setupQdrant";
 import { gemini } from "./gemini";
+import { models } from "./models";
 
 interface RetrievedChunk {
   text: string;
@@ -25,7 +26,7 @@ export async function retrieveChunks(
   let queryEmbeddingTokens = Math.max(5, Math.ceil(prefixedQuery.length / 4));
   try {
     const tokenRes = await gemini.models.countTokens({
-      model: "gemini-embedding-2",
+      model: models.embedding,
       contents: prefixedQuery,
     });
     if (tokenRes.totalTokens) {

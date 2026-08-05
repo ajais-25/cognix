@@ -5,6 +5,7 @@ import {
   MINIMUM_REQUIRED_BALANCE,
 } from "@/lib/credits";
 import dbConnect from "@/lib/dbConnect";
+import { models } from "@/lib/models";
 import { streamAnswer } from "@/lib/rag";
 import Conversation from "@/models/Conversation";
 import Message from "@/models/Message";
@@ -149,7 +150,6 @@ export async function POST(
       );
     }
 
-    // Stream the answer using gemini-3.5-flash-lite
     const { queryEmbeddingTokens, stream } = await streamAnswer(
       query,
       userId,
@@ -214,13 +214,13 @@ export async function POST(
             const itemizedCalls: CallUsageParam[] = [
               {
                 callType: "document_query_embedding",
-                model: "gemini-embedding-2",
+                model: models.embedding,
                 promptTokens: queryEmbeddingTokens,
                 outputTokens: 0,
               },
               {
                 callType: "document_answer_stream",
-                model: "gemini-3.5-flash-lite",
+                model: models.documentQuery,
                 promptTokens: mainStreamUsageMetadata?.promptTokenCount ?? 0,
                 outputTokens:
                   mainStreamUsageMetadata?.candidatesTokenCount ??

@@ -1,5 +1,6 @@
 import { PDF_RAG_PROMPT_TEMPLATE, PDF_RAG_SYSTEM_PROMPT } from "@/prompt";
 import { gemini } from "./gemini";
+import { models } from "./models";
 import { retrieveChunks } from "./retrieval";
 
 export async function streamAnswer(
@@ -36,7 +37,7 @@ export async function streamAnswer(
   let result;
   try {
     result = await gemini.models.generateContentStream({
-      model: "gemini-3.5-flash-lite",
+      model: models.documentQuery,
       contents: prompt,
       config: {
         systemInstruction: PDF_RAG_SYSTEM_PROMPT,

@@ -3,15 +3,14 @@ import { Document } from "@langchain/core/documents";
 import { gemini } from "./gemini";
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 import { CallUsageParam } from "./credits";
-
-const EMBEDDING_MODEL = "gemini-embedding-2";
+import { models } from "./models";
 const BATCH_SIZE = 98;
 
 // helper function for inducing delay
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const embeddingClient = new GoogleGenerativeAIEmbeddings({
-  model: EMBEDDING_MODEL,
+  model: models.embedding,
   apiKey: process.env.GEMINI_RAG_API_KEY!,
 });
 
@@ -40,7 +39,7 @@ export async function generateTitleFromChunksWithUsage(
     `;
 
     const result = await gemini.models.generateContent({
-      model: "gemini-3.5-flash-lite",
+      model: models.titleGeneration,
       contents: titlePrompt,
     });
 
@@ -81,7 +80,7 @@ export async function embedChunks(
   let totalEmbeddingTokens = 0;
   try {
     const tokenCountRes = await gemini.models.countTokens({
-      model: EMBEDDING_MODEL,
+      model: models.embedding,
       contents: prefixedChunks.join("\n"),
     });
     totalEmbeddingTokens = tokenCountRes.totalTokens ?? 0;
@@ -114,14 +113,14 @@ export async function embedChunks(
   const itemizedCalls: CallUsageParam[] = [
     {
       callType: "pdf_title_generation",
-      model: "gemini-3.5-flash-lite",
+      model: models.titleGeneration,
       promptTokens: titleResult.promptTokens,
       outputTokens: titleResult.outputTokens,
       thinkingTokens: titleResult.thinkingTokens,
     },
     {
       callType: "pdf_chunk_embeddings",
-      model: "gemini-embedding-2",
+      model: models.embedding,
       promptTokens: totalEmbeddingTokens,
       outputTokens: 0,
     },

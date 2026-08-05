@@ -5,6 +5,7 @@ import {
 } from "@/prompt";
 import { ChatHistory } from "./types";
 import { gemini } from "./gemini";
+import { models } from "./models";
 import { tavilyClient } from "./tavily";
 
 export async function streamQueryResponse(
@@ -29,7 +30,7 @@ export async function streamQueryResponse(
     );
 
     const decisionResponse = await gemini.models.generateContent({
-      model: "gemini-3.5-flash-lite",
+      model: models.webSearchDecision,
       contents: decisionPrompt,
       config: { responseMimeType: "application/json" },
     });
@@ -85,7 +86,7 @@ export async function streamQueryResponse(
   let stream;
   try {
     stream = await gemini.models.generateContentStream({
-      model: "gemini-3.5-flash-lite",
+      model: models.normalQuery,
       contents,
       config: {
         systemInstruction: SYSTEM_PROMPT,

@@ -1,12 +1,6 @@
 import { gemini } from "@/lib/gemini";
-import { tavilyClient } from "@/lib/tavily";
-import {
-  FOLLOW_UP_PROMPT_TEMPLATE,
-  FOLLOW_UP_SYSTEM_PROMPT,
-  PROMPT_TEMPLATE,
-  SYSTEM_PROMPT,
-  WEB_SEARCH_DECISION_PROMPT,
-} from "@/prompt";
+import { models } from "@/lib/models";
+import { FOLLOW_UP_PROMPT_TEMPLATE, FOLLOW_UP_SYSTEM_PROMPT } from "@/prompt";
 import { followUpsSchema } from "@/schemas/followUpsSchema";
 import { askSchema } from "@/schemas/askSchema";
 import { NextRequest, NextResponse } from "next/server";
@@ -175,14 +169,14 @@ export async function POST(request: NextRequest) {
           const itemizedCalls: CallUsageParam[] = [
             {
               callType: "web_search_decision",
-              model: "gemini-3.5-flash-lite",
+              model: models.webSearchDecision,
               promptTokens: decisionUsage.promptTokens,
               outputTokens: decisionUsage.outputTokens,
               thinkingTokens: decisionUsage.thinkingTokens,
             },
             {
               callType: "main_chat_stream",
-              model: "gemini-3.5-flash-lite",
+              model: models.normalQuery,
               promptTokens: mainStreamUsageMetadata?.promptTokenCount ?? 0,
               outputTokens:
                 mainStreamUsageMetadata?.candidatesTokenCount ??
@@ -200,7 +194,7 @@ export async function POST(request: NextRequest) {
           let followUps: string[] = [];
           try {
             const followUpResponse = await gemini.models.generateContent({
-              model: "gemini-3.5-flash-lite",
+              model: models.followUpGeneration,
               contents: followUpPrompt,
               config: {
                 systemInstruction: FOLLOW_UP_SYSTEM_PROMPT,
@@ -212,7 +206,7 @@ export async function POST(request: NextRequest) {
             if (followUpResponse.usageMetadata) {
               itemizedCalls.push({
                 callType: "follow_up_generation",
-                model: "gemini-3.5-flash-lite",
+                model: models.followUpGeneration,
                 promptTokens:
                   followUpResponse.usageMetadata.promptTokenCount ?? 300,
                 outputTokens:
