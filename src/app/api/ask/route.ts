@@ -52,6 +52,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (user.credits < MINIMUM_REQUIRED_BALANCE) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Insufficient credits to complete this query. Please top up.",
+          data: {
+            creditsRemaining: parseFloat(user.credits.toFixed(4)),
+            minimumRequiredUsd: MINIMUM_REQUIRED_BALANCE,
+          },
+        },
+        { status: 402 },
+      );
+    }
+
     if (!query) {
       return NextResponse.json(
         {
@@ -112,25 +127,6 @@ export async function POST(request: NextRequest) {
         .select("role content")
         .lean<{ role: "user" | "model"; content: string }[]>();
       chatHistory = previousMessages;
-    }
-
-    const freshUser = await User.findById(userId).select("credits").lean();
-    const currentCredits =
-      (freshUser as { credits?: number } | null)?.credits ?? user.credits;
-
-    if (currentCredits < MINIMUM_REQUIRED_BALANCE) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Insufficient credits to complete this query. Please top up.",
-          data: {
-            creditsRemaining: parseFloat(currentCredits.toFixed(4)),
-            minimumRequiredUsd: MINIMUM_REQUIRED_BALANCE,
-          },
-        },
-        { status: 402 },
-      );
     }
 
     let webSearchResults: Record<string, unknown>[] = [];

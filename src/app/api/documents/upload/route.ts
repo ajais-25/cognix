@@ -37,17 +37,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const freshUser = await User.findById(userId).select("credits").lean();
-    const currentCredits =
-      (freshUser as { credits?: number } | null)?.credits ?? user.credits;
-
-    if (currentCredits < MINIMUM_REQUIRED_BALANCE) {
+    if (user.credits < MINIMUM_REQUIRED_BALANCE) {
       return NextResponse.json(
         {
           success: false,
-          message: `Insufficient credits to process document upload. Please top up.`,
+          message:
+            "Insufficient credits to complete this query. Please top up.",
           data: {
-            creditsRemaining: parseFloat(currentCredits.toFixed(4)),
+            creditsRemaining: parseFloat(user.credits.toFixed(4)),
             minimumRequiredUsd: MINIMUM_REQUIRED_BALANCE,
           },
         },
