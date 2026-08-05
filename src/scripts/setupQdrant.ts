@@ -1,6 +1,4 @@
-import { qdrant } from "@/lib/qdrant";
-
-export const COLLECTION_NAME = "documents";
+import { qdrant, COLLECTION_NAME } from "@/lib/qdrant";
 
 async function setup() {
   try {
@@ -21,7 +19,7 @@ async function setup() {
     }
   } catch (err) {
     console.error("Failed to check/create collection:", err);
-    process.exit(1); // fail loudly — this is a one-time setup script, not a silent-continue context
+    process.exit(1); // fail loudly - this is a one-time setup script, not a silent-continue context
   }
 
   await ensurePayloadIndex(COLLECTION_NAME, "userId", {
@@ -50,7 +48,7 @@ async function ensurePayloadIndex(
       err?.data?.status?.error?.includes("already exists");
 
     if (alreadyExists) {
-      console.log(`Index on "${fieldName}" already exists — skipping.`);
+      console.log(`Index on "${fieldName}" already exists - skipping.`);
     } else {
       console.error(`Failed to create index on "${fieldName}":`, err);
       process.exit(1);

@@ -156,6 +156,25 @@ export async function POST(
       documentId,
     );
 
+    // Create conversation and save user message BEFORE streaming
+    // so the user message gets an earlier createdAt timestamp
+    let convId = conversationId;
+    if (!convId) {
+      const conversation = await Conversation.create({
+        userId,
+        title: query.length > 60 ? query.slice(0, 57) + "..." : query,
+        type: "document",
+        documentId: document._id,
+      });
+      convId = conversation._id;
+    }
+
+    await Message.create({
+      conversationId: convId,
+      role: "user",
+      content: query,
+    });
+
     const encoder = new TextEncoder();
     const sse = (data: string) => encoder.encode(`data: ${data}\n\n`);
 
@@ -186,30 +205,12 @@ export async function POST(
             }
           }
 
-          let convId = conversationId;
           try {
-            if (!convId) {
-              const conversation = await Conversation.create({
-                userId,
-                title: query.length > 60 ? query.slice(0, 57) + "..." : query,
-                type: "document",
-                documentId: document._id,
-              });
-              convId = conversation._id;
-            }
-
-            await Message.insertMany([
-              {
-                conversationId: convId,
-                role: "user",
-                content: query,
-              },
-              {
-                conversationId: convId,
-                role: "model",
-                content: fullAnswer,
-              },
-            ]);
+            await Message.create({
+              conversationId: convId,
+              role: "model",
+              content: fullAnswer || "Sorry, I couldn't generate a response.",
+            });
 
             const itemizedCalls: CallUsageParam[] = [
               {

@@ -1,6 +1,5 @@
-import { qdrant } from "./qdrant";
+import { qdrant, COLLECTION_NAME } from "./qdrant";
 import { embedQuery } from "./embeddings";
-import { COLLECTION_NAME } from "@/scripts/setupQdrant";
 import { gemini } from "./gemini";
 import { models } from "./models";
 
