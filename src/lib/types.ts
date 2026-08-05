@@ -63,3 +63,8 @@ export interface ChatState {
   credits: number | null;
   lowBalance: boolean;
 }
+
+export interface ChatHistory {
+  role: "user" | "model";
+  content: string;
+}
