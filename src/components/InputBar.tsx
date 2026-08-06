@@ -9,6 +9,8 @@ interface InputBarProps {
   initialValue?: string;
   placeholder?: string;
   isDocMode?: boolean;
+  disabled?: boolean;
+  disabledReason?: string;
 }
 
 export default function InputBar({
@@ -18,6 +20,8 @@ export default function InputBar({
   initialValue = "",
   placeholder = "Ask anything…",
   isDocMode = false,
+  disabled = false,
+  disabledReason,
 }: InputBarProps) {
   const [value, setValue] = useState(initialValue);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -45,9 +49,11 @@ export default function InputBar({
       el.value = initialValue;
       el.style.height = "auto";
       el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
-      el.focus();
+      if (!disabled) {
+        el.focus();
+      }
     }
-  }, [initialValue]);
+  }, [initialValue, disabled]);
 
   const autoResize = () => {
     const el = textareaRef.current;
@@ -70,7 +76,7 @@ export default function InputBar({
 
   const handleSend = () => {
     const trimmed = value.trim();
-    if (!trimmed || isLoading) return;
+    if (!trimmed || isLoading || disabled) return;
     onSend(trimmed);
     setValue("");
     if (textareaRef.current) {
@@ -81,7 +87,7 @@ export default function InputBar({
   return (
     <div className="input-bar-wrapper">
       <div
-        className={`input-bar ${isLoading ? "input-bar-loading" : ""} ${isDocMode ? "input-bar-doc-mode" : ""}`}
+        className={`input-bar ${isLoading ? "input-bar-loading" : ""} ${isDocMode ? "input-bar-doc-mode" : ""} ${disabled ? "input-bar-disabled" : ""}`}
       >
         <input
           ref={fileInputRef}
@@ -96,16 +102,18 @@ export default function InputBar({
             id="pdf-upload-btn"
             className="input-icon-btn"
             onClick={() =>
-              !isDocMode && !isLoading && fileInputRef.current?.click()
+              !isDocMode && !isLoading && !disabled && fileInputRef.current?.click()
             }
             type="button"
-            disabled={isDocMode || isLoading}
+            disabled={isDocMode || isLoading || disabled}
             aria-label={
-              isDocMode
-                ? "Upload Disabled"
-                : isLoading
-                  ? "Upload disabled while generating"
-                  : "Upload PDF"
+              disabled
+                ? disabledReason ?? "Upload Disabled"
+                : isDocMode
+                  ? "Upload Disabled"
+                  : isLoading
+                    ? "Upload disabled while generating"
+                    : "Upload PDF"
             }
           >
             <svg
@@ -122,11 +130,13 @@ export default function InputBar({
             </svg>
           </button>
           <span className="ui-tooltip-text">
-            {isDocMode
-              ? "Upload Disabled"
-              : isLoading
-                ? "Wait for response"
-                : "Upload PDF"}
+            {disabled
+              ? disabledReason ?? "Disabled"
+              : isDocMode
+                ? "Upload Disabled"
+                : isLoading
+                  ? "Wait for response"
+                  : "Upload PDF"}
           </span>
         </div>
 
@@ -139,14 +149,14 @@ export default function InputBar({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           rows={1}
-          disabled={isLoading}
+          disabled={isLoading || disabled}
         />
 
         <button
           id="send-btn"
-          className={`send-btn ${value.trim() && !isLoading ? "send-btn-active" : ""}`}
+          className={`send-btn ${value.trim() && !isLoading && !disabled ? "send-btn-active" : ""}`}
           onClick={handleSend}
-          disabled={!value.trim() || isLoading}
+          disabled={!value.trim() || isLoading || disabled}
           type="button"
           title="Send (Enter)"
         >

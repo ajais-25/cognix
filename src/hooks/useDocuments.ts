@@ -12,6 +12,7 @@ export function useDocuments() {
     fetchDocuments,
     uploadDocument,
     clearUploadState,
+    checkDocumentStatus,
   } = useChatData();
 
   return {
@@ -23,6 +24,7 @@ export function useDocuments() {
     fetchDocuments,
     uploadDocument,
     clearUploadState,
+    checkDocumentStatus,
   };
 }
 

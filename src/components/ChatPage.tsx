@@ -198,7 +198,7 @@ export default function ChatPage() {
   useEffect(() => {
     if (docId && documents.length > 0) {
       const doc = documents.find((d) => d._id === docId);
-      if (doc && doc.status === "ready") {
+      if (doc) {
         setMode({
           type: "document",
           documentId: doc._id,
@@ -243,9 +243,26 @@ export default function ChatPage() {
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, []);
 
+  const activeDoc =
+    mode.type === "document"
+      ? documents.find((d) => d._id === mode.documentId)
+      : null;
+  const currentDocStatus =
+    mode.type === "document" ? (activeDoc?.status ?? "processing") : null;
+  const isDocReady = mode.type === "chat" || currentDocStatus === "ready";
+  const isDocProcessing =
+    mode.type === "document" &&
+    (currentDocStatus === "pending" || currentDocStatus === "processing");
+  const isDocFailed =
+    mode.type === "document" && currentDocStatus === "failed";
+
   const docModePlaceholder =
     mode.type === "document"
-      ? `Ask about ${mode.documentName}…`
+      ? isDocProcessing
+        ? `Processing ${mode.documentName}… Please wait`
+        : isDocFailed
+          ? `Processing failed for ${mode.documentName}`
+          : `Ask about ${mode.documentName}…`
       : "Ask anything…";
 
   return (
@@ -265,7 +282,7 @@ export default function ChatPage() {
           >
             <path d="M21 12a9 9 0 1 1-6.219-8.56" />
           </svg>
-          <span>Uploading and processing document…</span>
+          <span>Uploading document…</span>
         </div>
       )}
 
@@ -326,21 +343,83 @@ export default function ChatPage() {
           </svg>
         </button>
         {mode.type === "document" && (
-          <div className="doc-mode-banner">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-            </svg>
-            Chatting with <strong>{mode.documentName}</strong>
+          <div
+            className={`doc-mode-banner ${
+              isDocProcessing
+                ? "doc-mode-banner-processing"
+                : isDocFailed
+                  ? "doc-mode-banner-failed upload-status-error"
+                  : "doc-mode-banner-ready"
+            }`}
+          >
+            {isDocProcessing ? (
+              <svg
+                className="spin"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="12" y1="2" x2="12" y2="6"></line>
+                <line x1="12" y1="18" x2="12" y2="22"></line>
+                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                <line x1="2" y1="12" x2="6" y2="12"></line>
+                <line x1="18" y1="12" x2="22" y2="12"></line>
+                <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+              </svg>
+            ) : isDocFailed ? (
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            ) : (
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+            )}
+            <span>
+              {isDocProcessing ? (
+                <>
+                  Processing... <strong>{mode.documentName}</strong>
+                  <span className="doc-status-dot-separator">•</span>
+                  Chat will open when ready
+                </>
+              ) : isDocFailed ? (
+                <>
+                  Failed to process <strong>{mode.documentName}</strong>
+                </>
+              ) : (
+                <>
+                  Chatting with <strong>{mode.documentName}</strong>
+                </>
+              )}
+            </span>
             {!activeConversationId && (
               <button
                 className="exit-doc-btn"
@@ -363,6 +442,14 @@ export default function ChatPage() {
           initialValue={followUpInput}
           placeholder={docModePlaceholder}
           isDocMode={mode.type === "document"}
+          disabled={!isDocReady}
+          disabledReason={
+            isDocProcessing
+              ? "Document processing..."
+              : isDocFailed
+                ? "Document processing failed"
+                : undefined
+          }
         />
       </div>
     </main>

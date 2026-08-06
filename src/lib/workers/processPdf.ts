@@ -18,7 +18,7 @@ export async function processPdf(
   try {
     await qdrant.upsert("documents", {
       points: chunks.map((chunk, i) => ({
-        id: `${documentId}-${i}`,
+        id: crypto.randomUUID(),
         vector: embeddings[i],
         payload: {
           documentId,

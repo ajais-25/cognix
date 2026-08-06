@@ -30,7 +30,7 @@ export interface UserDocument {
   fileName: string;
   fileSize: number;
   totalChunks?: number;
-  status: "processing" | "ready" | "failed";
+  status: "pending" | "processing" | "ready" | "failed";
   createdAt: string;
   updatedAt: string;
 }

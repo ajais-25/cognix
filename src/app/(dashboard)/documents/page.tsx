@@ -21,11 +21,13 @@ function formatDate(iso: string) {
 const statusLabel: Record<string, string> = {
   ready: "Ready",
   processing: "Processing",
+  pending: "Pending",
   failed: "Failed",
 };
 const statusClass: Record<string, string> = {
   ready: "status-ready",
   processing: "status-processing",
+  pending: "status-processing",
   failed: "status-failed",
 };
 
@@ -81,9 +83,9 @@ export default function DocumentsPage() {
                       <line x1="16" y1="17" x2="8" y2="17" />
                     </svg>
                   </div>
-                  <span className={`doc-status ${statusClass[doc.status]}`}>
+                  <span className={`doc-status ${statusClass[doc.status] || "status-processing"}`}>
                     <span className="status-dot" />
-                    {statusLabel[doc.status]}
+                    {statusLabel[doc.status] || "Processing"}
                   </span>
                 </div>
 
@@ -133,7 +135,7 @@ export default function DocumentsPage() {
                       </svg>
                       Chat with PDF
                     </Link>
-                  ) : doc.status === "processing" ? (
+                  ) : doc.status === "processing" || doc.status === "pending" ? (
                     <div className="doc-card-processing-status">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="spin">
                         <line x1="12" y1="2" x2="12" y2="6"></line>

@@ -43,6 +43,7 @@ interface ChatDataContextType {
     }) => void,
   ) => Promise<void>;
   clearUploadState: () => void;
+  checkDocumentStatus: (documentId: string) => Promise<UserDocument | null>;
 }
 
 const ChatDataContext = createContext<ChatDataContextType | undefined>(
@@ -95,6 +96,55 @@ export function ChatDataProvider({ children }: { children: React.ReactNode }) {
       setIsLoadingDocuments(false);
     }
   }, [isLoggedIn]);
+
+  const checkDocumentStatus = useCallback(async (documentId: string) => {
+    try {
+      const res = await axios.get(`/api/documents/${documentId}/status`);
+      if (res.data.success && res.data.data) {
+        const updatedDoc = res.data.data;
+        setDocuments((prevDocs) =>
+          prevDocs.map((d) =>
+            d._id === updatedDoc._id ? { ...d, ...updatedDoc } : d,
+          ),
+        );
+        return updatedDoc as UserDocument;
+      }
+    } catch {
+      // silently fail
+    }
+    return null;
+  }, []);
+
+  // Poll status for any documents with pending or processing status
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const pendingOrProcessingDocs = documents.filter(
+      (d) => d.status === "pending" || d.status === "processing",
+    );
+
+    if (pendingOrProcessingDocs.length === 0) return;
+
+    const intervalId = setInterval(async () => {
+      for (const doc of pendingOrProcessingDocs) {
+        try {
+          const res = await axios.get(`/api/documents/${doc._id}/status`);
+          if (res.data.success && res.data.data) {
+            const updatedDoc = res.data.data;
+            setDocuments((prevDocs) =>
+              prevDocs.map((d) =>
+                d._id === updatedDoc._id ? { ...d, ...updatedDoc } : d,
+              ),
+            );
+          }
+        } catch {
+          // ignore status poll error silently
+        }
+      }
+    }, 10000);
+
+    return () => clearInterval(intervalId);
+  }, [isLoggedIn, documents]);
 
   const uploadDocument = useCallback(
     async (
@@ -161,6 +211,7 @@ export function ChatDataProvider({ children }: { children: React.ReactNode }) {
         fetchDocuments,
         uploadDocument,
         clearUploadState,
+        checkDocumentStatus,
       }}
     >
       {children}
