@@ -216,6 +216,7 @@ export async function POST(
           }
 
           try {
+            await dbConnect();
             await Message.create({
               conversationId: convId,
               role: "model",

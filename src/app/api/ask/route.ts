@@ -261,6 +261,7 @@ export async function POST(request: NextRequest) {
 
           // 4. Save model message & deduct credits
           try {
+            await dbConnect();
             await Message.create({
               conversationId: convId,
               role: "model",

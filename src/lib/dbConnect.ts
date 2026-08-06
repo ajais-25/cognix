@@ -1,39 +1,57 @@
 import mongoose from "mongoose";
-import { setServers } from "node:dns/promises";
-setServers(["1.1.1.1", "8.8.8.8"]);
 
-type ConnectionObject = {
-  isConnected?: number;
-};
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+}
 
-const connection: ConnectionObject = {};
+declare global {
+  var mongooseCache: MongooseCache | undefined;
+}
 
-mongoose.connection.on("disconnected", () => {
-  console.warn("MongoDB disconnected");
-  connection.isConnected = 0;
-});
+const cached: MongooseCache =
+  global.mongooseCache || (global.mongooseCache = { conn: null, promise: null });
 
-mongoose.connection.on("error", (err) => {
-  console.error("MongoDB connection error:", err);
-  connection.isConnected = 0;
-});
+async function dbConnect(): Promise<typeof mongoose> {
+  if (cached.conn && mongoose.connection.readyState === 1) {
+    return cached.conn;
+  }
 
-async function dbConnect(): Promise<void> {
-  if (connection.isConnected) {
-    console.log("Already connected to database");
-    return;
+  if (!cached.promise || mongoose.connection.readyState === 0) {
+    const opts = {
+      bufferCommands: true,
+      serverSelectionTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
+    };
+
+    const baseUri = process.env.MONGODB_URI!;
+    const dbName = process.env.DB_NAME;
+    const mongoUri =
+      dbName && !baseUri.includes(`/${dbName}`)
+        ? `${baseUri}/${dbName}`
+        : baseUri;
+
+    cached.promise = mongoose
+      .connect(mongoUri, opts)
+      .then((m) => {
+        console.log("DB connected successfully");
+        return m;
+      })
+      .catch((err) => {
+        cached.promise = null;
+        console.error("Database connection failed:", err);
+        throw err;
+      });
   }
 
   try {
-    const db = await mongoose.connect(
-      `${process.env.MONGODB_URI!}/${process.env.DB_NAME!}`,
-    );
-    connection.isConnected = db.connections[0].readyState;
-    console.log("DB connected successfully");
-  } catch (error) {
-    console.error("Database connection failed:", error);
-    throw error;
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
   }
+
+  return cached.conn;
 }
 
 export default dbConnect;
