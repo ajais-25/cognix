@@ -31,7 +31,7 @@ export default function DashboardLayout({
   );
 
   const handleNewChat = useCallback(() => {
-    router.push("/chat");
+    router.push("/new");
     triggerNewChat();
   }, [router, triggerNewChat]);
 

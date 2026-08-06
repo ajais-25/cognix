@@ -152,6 +152,16 @@ export async function POST(request: NextRequest) {
     const readable = new ReadableStream({
       async start(controller) {
         try {
+          // Send conversation metadata immediately so client can update route
+          controller.enqueue(
+            sse(
+              JSON.stringify({
+                type: "conversation",
+                data: { conversationId: convId },
+              }),
+            ),
+          );
+
           // 1. Send web search results first
           controller.enqueue(
             sse(
@@ -163,11 +173,11 @@ export async function POST(request: NextRequest) {
           let fullAnswer = "";
           let mainStreamUsageMetadata:
             | {
-                promptTokenCount?: number;
-                candidatesTokenCount?: number;
-                totalTokenCount?: number;
-                thoughtsTokenCount?: number;
-              }
+              promptTokenCount?: number;
+              candidatesTokenCount?: number;
+              totalTokenCount?: number;
+              thoughtsTokenCount?: number;
+            }
             | undefined;
 
           for await (const chunk of stream) {

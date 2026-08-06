@@ -47,7 +47,7 @@ export default function Navbar({ onNewChat }: NavbarProps) {
     if (onNewChat) {
       onNewChat();
     } else {
-      router.push("/chat");
+      router.push("/new");
       triggerNewChat();
     }
   };

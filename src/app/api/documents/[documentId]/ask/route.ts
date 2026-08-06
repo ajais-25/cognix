@@ -181,14 +181,24 @@ export async function POST(
     const readable = new ReadableStream({
       async start(controller) {
         try {
+          // Send conversation metadata immediately so client can update route
+          controller.enqueue(
+            sse(
+              JSON.stringify({
+                type: "conversation",
+                data: { conversationId: convId },
+              }),
+            ),
+          );
+
           let fullAnswer = "";
           let mainStreamUsageMetadata:
             | {
-                promptTokenCount?: number;
-                candidatesTokenCount?: number;
-                totalTokenCount?: number;
-                thoughtsTokenCount?: number;
-              }
+              promptTokenCount?: number;
+              candidatesTokenCount?: number;
+              totalTokenCount?: number;
+              thoughtsTokenCount?: number;
+            }
             | undefined;
 
           for await (const chunk of stream) {

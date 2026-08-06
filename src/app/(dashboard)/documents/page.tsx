@@ -65,7 +65,7 @@ export default function DocumentsPage() {
               <polyline points="14 2 14 8 20 8" />
             </svg>
             <p>No documents uploaded yet</p>
-            <Link href="/chat" className="subpage-signin-btn">Upload a PDF</Link>
+            <Link href="/new" className="subpage-signin-btn">Upload a PDF</Link>
           </div>
         ) : (
           <div className="docs-grid">
@@ -124,7 +124,7 @@ export default function DocumentsPage() {
                 <div className="doc-card-footer">
                   {doc.status === "ready" ? (
                     <Link
-                      href={`/chat?doc=${doc._id}`}
+                      href={`/new?doc=${doc._id}`}
                       className="doc-card-chat-btn"
                       title="Chat with this document"
                     >

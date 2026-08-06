@@ -19,7 +19,7 @@ const publicApiRoutes = [
   "/api/webhook/razorpay",
 ];
 
-const openRoutes = ["/chat"];
+const openRoutes = ["/new"];
 
 export default async function proxy(request: NextRequest) {
   const secret = process.env.JWT_SECRET;
@@ -68,7 +68,7 @@ export default async function proxy(request: NextRequest) {
       await jwtVerify(token, encodedSecret);
 
       if (isPublicPage) {
-        return NextResponse.redirect(new URL("/chat", request.nextUrl));
+        return NextResponse.redirect(new URL("/new", request.nextUrl));
       }
     }
 

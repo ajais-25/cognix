@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ChatMode, StreamingMessage, SearchResult } from "@/lib/types";
 import { useChat } from "@/hooks/useChat";
 import { useDocuments } from "@/hooks/useDocuments";
@@ -46,15 +46,12 @@ export default function ChatPage() {
     setMessages,
   } = useChat(mode);
 
-  const { conversations, fetchConversations, loadConversation } =
-    useConversations();
+  const { fetchConversations, loadConversation } = useConversations();
 
   const {
     documents,
-    isLoading: docsLoading,
     isUploading,
     uploadError,
-    uploadSuccess,
     uploadDocument,
     clearUploadState,
   } = useDocuments();
@@ -63,9 +60,17 @@ export default function ChatPage() {
   useEffect(() => {
     if (chatConversationId && activeConversationId !== chatConversationId) {
       setActiveConversationId(chatConversationId);
-      router.replace(`/chat/${chatConversationId}`);
+      window.history.replaceState(null, "", `/chat/${chatConversationId}`);
+      if (isLoggedIn) {
+        fetchConversations();
+      }
     }
-  }, [chatConversationId, activeConversationId, router]);
+  }, [
+    chatConversationId,
+    activeConversationId,
+    isLoggedIn,
+    fetchConversations,
+  ]);
 
   // Handle explicit new chat trigger from navbar logo or sidebar button
   useEffect(() => {
@@ -87,7 +92,7 @@ export default function ChatPage() {
         return;
       }
       if (!data) {
-        router.push("/chat");
+        router.push("/new");
         return;
       }
 
@@ -123,12 +128,12 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (urlConversationId) {
-      if (urlConversationId !== activeConversationId) {
+      if (urlConversationId !== activeConversationId && !isLoading) {
         handleSelectConversation(urlConversationId);
       }
     } else {
       currentLoadingIdRef.current = null;
-      if (activeConversationId !== null) {
+      if (activeConversationId !== null && !isLoading) {
         resetChat();
         setMode({ type: "chat" });
         setActiveConversationId(null);
@@ -138,6 +143,7 @@ export default function ChatPage() {
   }, [
     urlConversationId,
     activeConversationId,
+    isLoading,
     handleSelectConversation,
     resetChat,
     clearUploadState,
@@ -341,7 +347,7 @@ export default function ChatPage() {
                 onClick={() => {
                   setMode({ type: "chat" });
                   resetChat();
-                  router.push("/chat");
+                  router.push("/new");
                 }}
               >
                 ✕

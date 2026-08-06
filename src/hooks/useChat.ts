@@ -91,6 +91,14 @@ export function useChat(mode: ChatMode) {
               };
 
               switch (event.type) {
+                case "conversation": {
+                  const convData = event.data as { conversationId: string };
+                  if (convData?.conversationId) {
+                    setConversationId(convData.conversationId);
+                  }
+                  break;
+                }
+
                 case "text":
                   setMessages((prev) =>
                     prev.map((m) =>
@@ -137,15 +145,15 @@ export function useChat(mode: ChatMode) {
                     prev.map((m) =>
                       m.id === modelMsgId
                         ? {
-                            ...m,
-                            content:
-                              m.content ||
-                              (typeof event.data === "string"
-                                ? event.data
-                                : ((event.data as { message?: string })
-                                    ?.message ?? "An error occurred.")),
-                            isError: true,
-                          }
+                          ...m,
+                          content:
+                            m.content ||
+                            (typeof event.data === "string"
+                              ? event.data
+                              : ((event.data as { message?: string })
+                                ?.message ?? "An error occurred.")),
+                          isError: true,
+                        }
                         : m,
                     ),
                   );
@@ -202,11 +210,11 @@ export function useChat(mode: ChatMode) {
           prev.map((m) =>
             m.id === modelMsgId
               ? {
-                  ...m,
-                  content: errMsg,
-                  isStreaming: false,
-                  isError: true,
-                }
+                ...m,
+                content: errMsg,
+                isStreaming: false,
+                isError: true,
+              }
               : m,
           ),
         );

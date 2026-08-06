@@ -26,7 +26,7 @@ function SignInContent() {
 
       persistUser(res.data.data);
       await refetchUser();
-      const redirectTo = searchParams.get("next") || "/chat";
+      const redirectTo = searchParams.get("next") || "/new";
       router.push(redirectTo);
     } catch (err: any) {
       setError(err.response?.data?.message ?? "Sign in failed");
