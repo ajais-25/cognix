@@ -10,6 +10,8 @@ Ask anything with real-time web search, or upload a PDF and chat with it using R
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?logo=mongodb)](https://mongoosejs.com/)
+[![Qdrant](https://img.shields.io/badge/Qdrant-Vector_DB-DC2626?logo=qdrant)](https://qdrant.tech/)
+[![Redis](https://img.shields.io/badge/Redis-BullMQ-DC382D?logo=redis)](https://redis.io/)
 [![Gemini](https://img.shields.io/badge/Google-Gemini-4285F4?logo=google)](https://ai.google.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss)](https://tailwindcss.com/)
 
@@ -22,7 +24,7 @@ Ask anything with real-time web search, or upload a PDF and chat with it using R
 ### 💬 AI Chat with Web Search
 
 - Real-time conversations powered by **Google Gemini**
-- Intelligent web search integration via **Tavily** — the AI decides when a web search is needed
+- Intelligent web search integration via **Tavily** - the AI decides when a web search is needed
 - Streaming responses with markdown rendering and syntax highlighting
 - Smart follow-up question suggestions after every answer
 - Full conversation history with sidebar navigation
@@ -30,6 +32,8 @@ Ask anything with real-time web search, or upload a PDF and chat with it using R
 ### 📄 Document Intelligence (RAG)
 
 - Upload PDFs and **chat with your documents**
+- Cloud object storage for uploaded files powered by **Backblaze B2**
+- Asynchronous PDF processing queue powered by **Redis** and **BullMQ**
 - RAG pipeline: split → embed → retrieve → answer
 - Powered by **LangChain**, **Google Gemini Embeddings**, and **Qdrant** vector database
 - Answers grounded in document context with source attribution
@@ -67,12 +71,13 @@ Ask anything with real-time web search, or upload a PDF and chat with it using R
 │                   Next.js App Router (API)                  │
 │  /api/ask · /api/conversations · /api/documents             │
 │  /api/credits · /api/users · /api/webhook                   │
-├────────────┬──────────────┬──────────────┬──────────────────┤
-│  Gemini    │   Tavily     │   Qdrant     │   MongoDB        │
-│  (LLM)     │ (Web Search) │ (Vectors)    │   (Data)         │
-├────────────┴──────────────┴──────────────┴──────────────────┤
-│   Razorpay (Payments)  ·  Resend (Emails)  ·  Jose (JWT)    │
-└─────────────────────────────────────────────────────────────┘
+├───────────────┬──────────────┬──────────────┬───────────────┤
+│   Redis &     │   Qdrant     │  Backblaze   │   MongoDB     │
+│   BullMQ      │ (Vector DB)  │ (PDF Storage)│    (Data)     │
+├───────────────┼──────────────┴──────────────┴───────────────┤
+│   Gemini      │   Tavily (Web Search)                       │
+│   (LLM)       │   Razorpay · Resend · Jose (JWT)            │
+└───────────────┴─────────────────────────────────────────────┘
 ```
 
 ---
@@ -84,7 +89,9 @@ Ask anything with real-time web search, or upload a PDF and chat with it using R
 - **Node.js** 18+
 - **MongoDB** instance (local or Atlas)
 - **Qdrant** vector database instance
-- API keys for: Gemini, Tavily, Resend, Razorpay
+- **Redis** instance (local or cloud like Upstash / Redis Cloud)
+- **Backblaze B2** bucket (S3-compatible object storage)
+- API keys for: Gemini, Tavily, Resend, Razorpay, Backblaze B2
 
 ### 1. Clone the repository
 
@@ -104,39 +111,61 @@ npm install
 Create a `.env` file in the project root:
 
 ```env
-# ── Database ──
 MONGODB_URI=your_mongodb_connection_string
 DB_NAME=cognix
 
-# ── Authentication ──
+REDIS_URL=your_redis_connection_url
+
+# Backblaze
+BACKBLAZE_ACCESS_KEY_ID=your_backblaze_access_key_id
+BACKBLAZE_SECRET_ACCESS_KEY=your_backblaze_secret_access_key
+BACKBLAZE_BUCKET_NAME=your_backblaze_bucket_name
+
 JWT_SECRET=your_jwt_secret
 
-# ── AI & Search ──
+RESEND_API_KEY=your_resend_api_key
+
 GEMINI_API_KEY=your_gemini_api_key
 GEMINI_RAG_API_KEY=your_gemini_rag_api_key
 TAVILY_API_KEY=your_tavily_api_key
 
-# ── Vector Store (Qdrant) ──
-QDRANT_URL=your_qdrant_url
-QDRANT_API_KEY=your_qdrant_api_key
-
-# ── Email (Resend) ──
-RESEND_API_KEY=your_resend_api_key
-SUPPORT_EMAIL=support@yourdomain.com
 DOMAIN_URL=http://localhost:3000
+SUPPORT_EMAIL=support@yourdomain.com
 
-# ── Payments (Razorpay) ──
+# Qdrant configuration
+QDRANT_API_KEY=your_qdrant_api_key
+QDRANT_URL=your_qdrant_url
+
+# Credits
+PROFIT_MARGIN_PERCENT=your_profit_margin_percentage
+MINIMUM_REQUIRED_BALANCE=0.01
+LOW_BALANCE_THRESHOLD=0.05
+
+# Razorpay configuration
 NEXT_PUBLIC_RAZORPAY_KEY_ID=your_razorpay_key_id
 RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 RAZORPAY_WEBHOOK_SECRET=your_razorpay_webhook_secret
-
-# ── Credits Configuration ──
-PROFIT_MARGIN_PERCENT=your_profit_margin_percentage
-MINIMUM_REQUIRED_BALANCE=your_minimum_required_balance
-LOW_BALANCE_THRESHOLD=your_low_balance_threshold
 ```
 
-### 4. Run the development server
+### 4. Setup Qdrant Collection & Indexes (One-Time Setup)
+
+Before starting the app for the first time, run the setup script to create the Qdrant collection and required payload indexes (`userId`, `documentId`). **This step only needs to be executed once initially.**
+
+```bash
+npm run setup:qdrant
+```
+
+### 5. Start the BullMQ Background Worker
+
+Cognix offloads PDF ingestion, chunking, and embedding generation to an asynchronous background worker powered by BullMQ and Redis. Start the worker in a separate terminal:
+
+```bash
+npm run worker
+```
+
+### 6. Run the Next.js Development Server
+
+In another terminal window, start the Next.js server:
 
 ```bash
 npm run dev
@@ -144,9 +173,10 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to start using Cognix.
 
-### 5. Build for production
+### 7. Build for production
 
 ```bash
 npm run build
 npm start
 ```
+
