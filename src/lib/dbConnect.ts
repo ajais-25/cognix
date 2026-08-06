@@ -8,6 +8,16 @@ type ConnectionObject = {
 
 const connection: ConnectionObject = {};
 
+mongoose.connection.on("disconnected", () => {
+  console.warn("MongoDB disconnected");
+  connection.isConnected = 0;
+});
+
+mongoose.connection.on("error", (err) => {
+  console.error("MongoDB connection error:", err);
+  connection.isConnected = 0;
+});
+
 async function dbConnect(): Promise<void> {
   if (connection.isConnected) {
     console.log("Already connected to database");
@@ -16,16 +26,13 @@ async function dbConnect(): Promise<void> {
 
   try {
     const db = await mongoose.connect(
-      `${process.env.MONGODB_URI!}/${process.env.DB_NAME!}` || "",
+      `${process.env.MONGODB_URI!}/${process.env.DB_NAME!}`,
     );
-
     connection.isConnected = db.connections[0].readyState;
-
     console.log("DB connected successfully");
   } catch (error) {
-    console.log("Database connection failed", error);
-
-    process.exit(1);
+    console.error("Database connection failed:", error);
+    throw error;
   }
 }
 
