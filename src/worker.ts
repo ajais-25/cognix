@@ -1,8 +1,14 @@
+import express from "express";
 import { Job, Worker } from "bullmq";
 import { redisConnection } from "./lib/redis";
 import { processPdf } from "./lib/workers/processPdf";
 import UserDocument from "./models/UserDocument";
 import dbConnect from "./lib/dbConnect";
+
+const app = express();
+const PORT = process.env.PORT || 8080;
+
+let lastJobActivity = Date.now();
 
 const worker = new Worker(
   "pdf-processing",
@@ -40,6 +46,23 @@ worker.on("failed", async (job: Job | undefined, err: Error) => {
 
 worker.on("error", (err) => {
   console.error(err);
+});
+
+// For Render
+app.get("/", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    uptime: process.uptime(),
+    lastJobActivity: new Date(lastJobActivity).toISOString(),
+  });
+});
+
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
+app.listen(PORT, () => {
+  console.log(`Worker HTTP server listening on port ${PORT}`);
 });
 
 process.on("SIGTERM", async () => {

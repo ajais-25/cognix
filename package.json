@@ -23,6 +23,7 @@
     "axios": "^1.16.1",
     "bcryptjs": "^3.0.3",
     "bullmq": "^6.0.6",
+    "express": "^5.2.1",
     "ioredis": "^6.0.0",
     "jose": "^6.2.3",
     "jsonwebtoken": "^9.0.3",
@@ -45,6 +46,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/katex": "^0.16.8",
     "@types/node": "^20",
