@@ -4,7 +4,7 @@
 
 **AI-Powered Chat & Document Intelligence Platform**
 
-Ask anything with real-time web search, or upload a PDF and chat with it using RAG-powered document intelligence — all in one beautiful interface.
+Ask anything with real-time web search, or upload a PDF and chat with it using RAG-powered document intelligence - all in one beautiful interface.
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
